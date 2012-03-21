@@ -17,11 +17,10 @@
  *
  */
 
-### Hooks
+// Register activation/deactivation hooks
 register_activation_hook(TOPSPIN_PLUGIN_FILE,'topspin_activate');
 register_deactivation_hook(TOPSPIN_PLUGIN_FILE, 'topspin_deactivate');
 
-### Functions
 function topspin_run_sql_file($filename) {
 	$file = TOPSPIN_PLUGIN_PATH.'/sql/'.$filename;
 	if(file_exists($file)) {
@@ -35,7 +34,7 @@ function topspin_run_sql_file($filename) {
 }
 
 function topspin_activate() {
-	##	Create Tables
+	// Run SQL Files
 	topspin_run_sql_file('topspin_currency.sql');
 	topspin_run_sql_file('topspin_currency_insert.sql');
 	topspin_run_sql_file('topspin_items.sql');
@@ -52,7 +51,7 @@ function topspin_activate() {
 	topspin_run_sql_file('topspin_stores_tag.sql');
 	topspin_run_sql_file('topspin_artists.sql');
 	topspin_run_sql_file('topspin_tags.sql');
-	##	Activate Cron
+	// Activate Cron
 	wp_schedule_event(time(),'every_5_min','topspin_cron_fetch_items');
 }
 

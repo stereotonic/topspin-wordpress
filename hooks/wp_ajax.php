@@ -2,11 +2,13 @@
 
 /*
  *
- *	Last Modified:			August 12, 2011
+ *	Last Modified:			March 14, 2011
  *
  *	--------------------------------------
  *	Change Log
  *	--------------------------------------
+ *	2012-03-14
+ 		- Moved topspin_ajax.php to hooks/wp_ajax.php
  *	2011-08-12
  		- Added order parameter
  */

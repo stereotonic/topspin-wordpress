@@ -1,10 +1,12 @@
 <?php
 /*
- *	Last Modified:		January 24, 2011
+ *	Last Modified:		March 14, 2011
  *
  *	----------------------------------
  *	Change Log
  *	----------------------------------
+ *	2012-03-14
+ 		- Fixed Division by zero PHP Warning on topspin_shortcode_buy_buttons()
  *	2012-01-24
  		- Added nav menu shortcode @eThan
  *	2011-09-19
@@ -41,7 +43,7 @@ function topspin_shortcode_store_item($atts) {
 			ob_start();
 			##	Template File
 			$templateMode = $store->getSetting('topspin_template_mode');
-			$templatefile = 'templates/topspin-'.$templateMode.'/featured-item.php';
+			$templatefile = TOPSPIN_PLUGIN_PATH.'/templates/topspin-'.$templateMode.'/featured-item.php';
 			##	3.1
 			if(file_exists(TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/featured-item.php')) { $templatefile = TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/featured-item.php'; }
 			elseif(file_exists(TOPSPIN_CURRENT_THEMEPARENT_PATH.'/topspin-'.$templateMode.'/featured-item.php')) { $templatefile = TOPSPIN_CURRENT_THEMEPARENT_PATH.'/topspin-'.$templateMode.'/featured-item.php'; }
@@ -89,7 +91,7 @@ function topspin_shortcode_buy_buttons($atts) {
 	}
 	else {
 		$storedata['total_items'] = count($allitems);
-		$storedata['total_pages'] = ceil($storedata['total_items']/$storedata['items_per_page']);
+		$storedata['total_pages'] = ($storedata['items_per_page']) ? ceil($storedata['total_items']/$storedata['items_per_page']) : 1;
 		$storedata['curr_page'] = $page;
 		$storedata['prev_page'] = ($page==1) ? '' : get_permalink($post->ID).$queryAppendSign.'page='.($page-1);
 		$storedata['next_page'] = ($storedata['curr_page']<$storedata['total_pages']) ? get_permalink($post->ID).$queryAppendSign.'page='.($page+1) : '';
@@ -97,7 +99,7 @@ function topspin_shortcode_buy_buttons($atts) {
 	ob_start();
 	##	Template File
 	$templateMode = $store->getSetting('topspin_template_mode');
-	$templatefile = 'templates/topspin-'.$templateMode.'/item-listings.php';
+	$templatefile = TOPSPIN_PLUGIN_PATH.'/templates/topspin-'.$templateMode.'/item-listings.php';
 	##	3.1
 	if(file_exists(TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/item-listings.php')) { $templatefile = TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/item-listings.php'; }
 	elseif(file_exists(TOPSPIN_CURRENT_THEMEPARENT_PATH.'/topspin-'.$templateMode.'/item-listings.php')) { $templatefile = TOPSPIN_CURRENT_THEMEPARENT_PATH.'/topspin-'.$templateMode.'/item-listings.php'; }
@@ -126,7 +128,7 @@ function topspin_shortcode_featured_item($atts) {
 		ob_start();
 		##	Template File
 		$templateMode = $store->getSetting('topspin_template_mode');
-		$templatefile = 'templates/topspin-'.$templateMode.'/featured-item.php';
+		$templatefile = TOPSPIN_PLUGIN_PATH.'/templates/topspin-'.$templateMode.'/featured-item.php';
 		##	3.1
 		if(file_exists(TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/featured-item.php')) { $templatefile = TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/featured-item.php'; }
 		elseif(file_exists(TOPSPIN_CURRENT_THEMEPARENT_PATH.'/topspin-'.$templateMode.'/featured-item.php')) { $templatefile = TOPSPIN_CURRENT_THEMEPARENT_PATH.'/topspin-'.$templateMode.'/featured-item.php'; }
@@ -159,7 +161,7 @@ function topspin_shortcode_store_nav_menu($atts) {
 		ob_start();
 		##	Template File
 		$templateMode = $store->getSetting('topspin_template_mode');
-		$templatefile = 'templates/topspin-'.$templateMode.'/nav-menu.php';
+		$templatefile = TOPSPIN_PLUGIN_PATH.'/templates/topspin-'.$templateMode.'/nav-menu.php';
 		##	3.1
 		if(file_exists(TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/nav-menu.php')) { $templatefile = TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/nav-menu.php'; }
 		elseif(file_exists(TOPSPIN_CURRENT_THEMEPARENT_PATH.'/topspin-'.$templateMode.'/nav-menu.php')) { $templatefile = TOPSPIN_CURRENT_THEMEPARENT_PATH.'/topspin-templates/nav-menu.php'; }

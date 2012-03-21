@@ -9,6 +9,7 @@
  *	Change Log
  *	----------------------------------
  *	2012-02-06
+ 		- Added local image caching: new method cache_image()
  		- Fixed getItems() breaking when items with multiple tags are joined - [@jackdaw4 - https://github.com/topspin/topspin-wordpress/issues/31]
  *	2012-01-04
  		- Updated getArtistsList() to order by name ASC
@@ -122,29 +123,37 @@ class Topspin_Store {
 		'key' => array(), //key value pairs
 		'data' => array() //table data
 	);
+	
+	private $_uploadDir = array(
+		'wp' => array(),
+		'topspin' => array()
+	);
 
 	public function __construct() {
 		global $wpdb;
 		$this->wpdb = $wpdb;
+		$this->_uploadDir['wp'] = wp_upload_dir();
+		$this->set_uploads_dir($this->_uploadDir['wp']);		
 	}
 
-	### GENERAL METHODS
-	
-	public function setError($msg) {
-		$this->_error = $msg;
-	}
-	
-	public function getError() {
-		return $this->_error;
-	}
+	/* !----- GENERAL METHODS ----- */
 
+	public function set_uploads_dir($uploadDir) {
+		$this->_uploadDir['topspin'] = array(
+			'path' => sprintf('%s/topspin',$uploadDir['basedir']),
+			'url' => sprintf('%s/topspin',$uploadDir['baseurl'])
+		);
+		wp_mkdir_p($this->_uploadDir['topspin']['path']);
+	}
+	public function setError($msg) { $this->_error = $msg; }
+	public function getError() { return $this->_error; }
 	public function setAPICredentials($artist_id,$api_username,$api_key) {
 		$this->artist_id = $artist_id;
 		$this->api_username = $api_username;
 		$this->api_key = $api_key;
 	}
-	
-	### API METHODS
+
+	/* !----- API METHODS ----- */
 	
 	public function checkAPI() {
 		##	RETURN
@@ -232,7 +241,7 @@ class Topspin_Store {
 		}
 		if($res) { return $res; }
 	}
-	
+
 	public function getArtistsTotalPages() {
 		##	Retrieves the artists from the Artist Search API
 		##	https://docs.topspin.net/tiki-index.php?page=Artist+Search+API
@@ -243,7 +252,7 @@ class Topspin_Store {
 		$data = json_decode($this->process($url,null,false));
 		if(isset($data->total_pages)) { return $data->total_pages; }
 	}
-	
+
 	public function getArtists($page=1) {
 		##	Retrieves the list of artists from the Artist Search API
 		##	https://docs.topspin.net/tiki-index.php?page=Artist+Search+API
@@ -266,7 +275,7 @@ class Topspin_Store {
 		}
 		return $artists;
 	}
-	
+
 	public function getArtist() {
 		##	Retrieves the artist information from the Artist Search API
 		##	https://docs.topspin.net/tiki-index.php?page=Artist+Search+API
@@ -286,7 +295,7 @@ class Topspin_Store {
 		}
 		return $artist;
 	}
-	
+
 	public function getTotalPages() {
 		##	Retrieves the items/products/offers from the Store API
 		##	https://docs.topspin.net/tiki-index.php?page=Store+API
@@ -300,7 +309,7 @@ class Topspin_Store {
 		$data = json_decode($this->process($url,$post_args,false));
 		if(isset($data->total_pages)) { return $data->total_pages; }
 	}
-	
+
 	public function ordersGetTotalPages() {
 		##	Retrieves the total number of pages from the Order API
 		##	https://docs.topspin.net/tiki-index.php?page=Order+API#View_Orders
@@ -358,9 +367,20 @@ class Topspin_Store {
 		$artist = $this->getArtist();
 		if($artist) { return $artist->spin_tags; }
 	}
-	
-	### REBUILD CACHE METHODS
-	
+
+	/* !----- REBUILD CACHE METHODS ----- */
+
+	public function cache_image($item_ID,$key,$size,$url) {
+		/*
+		 *	Returns the filename of the saved image file
+		 */
+		// Generate filenames for sizes based on item ID
+		$filename = sprintf('%s-%s-%s.jpg',$item_ID,$key,$size);
+		$path = sprintf('%s/%s',$this->_uploadDir['topspin']['path'],$filename);
+		$res = copy($url,$path);
+		if($res) { return $filename; }
+	}
+
 	public function rebuildAll() {
 		##	Rebuilds the items, and artists database tables
 		$apiStatus = $this->checkAPI();
@@ -371,7 +391,7 @@ class Topspin_Store {
 			$this->setSetting('topspin_last_cache_all',$timestamp);
 		}
 	}
-	
+
 	public function rebuildOrders() {
 		##	Rebuild and syncs the orders table with Topspin
 		$totalOrdersPage = $this->ordersGetTotalPages();
@@ -546,6 +566,18 @@ EOD;
 						if(isset($item->campaign->product->images) && is_array($item->campaign->product->images)) {
 							$imageFormat = array('%d','%s','%s','%s','%s');
 							foreach($item->campaign->product->images as $key=>$image) {
+								$small = $this->cache_image($item->id,$key,'small',$item->campaign->product->images[$key]->small_url);
+								$medium = $this->cache_image($item->id,$key,'medium',$item->campaign->product->images[$key]->medium_url);
+								$large = $this->cache_image($item->id,$key,'large',$item->campaign->product->images[$key]->large_url);
+
+								// Begin Local Caching v3.4
+								$images = array();
+								if($small) { $images['small'] = $small; }
+								if($medium) { $images['medium'] = $medium; }
+								if($large) { $images['large'] = $large; }
+								update_option(sprintf('_topspin_item_images_%s',$item->id),$images);
+								// End Local Caching v3.4
+
 								$imageData = array(
 									'item_id' => $item->id,
 									'source_url' => $item->campaign->product->images[$key]->source_url,
@@ -1440,10 +1472,17 @@ EOD;
 		foreach($sortedItems as $key=>$item) {
 			$sortedItems[$key]['campaign'] = unserialize($sortedItems[$key]['campaign']);
 			##	Add Images
-			$sortedItems[$key]['images'] = $this->getItemImages($item['id']);
+			//$sortedItems[$key]['images'] = $this->getItemImages($item['id']);
 			##	Get Default Image
-			$sortedItems[$key]['default_image'] = (strlen($item['poster_image_source'])) ? $this->getItemDefaultImage($item['id'],$item['poster_image_source']) : $item['poster_image'];
-			$sortedItems[$key]['default_image_large'] = (strlen($item['poster_image_source'])) ? $this->getItemDefaultImage($item['id'],$item['poster_image_source'],'large') : $item['poster_image'];
+			//$sortedItems[$key]['default_image'] = (strlen($item['poster_image_source'])) ? $this->getItemDefaultImage($item['id'],$item['poster_image_source']) : $item['poster_image'];
+			//$sortedItems[$key]['default_image_large'] = (strlen($item['poster_image_source'])) ? $this->getItemDefaultImage($item['id'],$item['poster_image_source'],'large') : $item['poster_image'];
+
+			// Begin Local Cached Image v3.4
+			$images = get_option(sprintf('_topspin_item_images_%s',$item['id']));
+			$sortedItems[$key]['default_image'] = (strlen($images['medium'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['medium']) : $item['poster_image'];
+			$sortedItems[$key]['default_image_large'] = (strlen($images['large'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['large']) : $item['poster_image'];
+			// End Local Cached Image v3.4
+
 		}
 		return $sortedItems;
 	}
@@ -1512,10 +1551,17 @@ EOD;
 		if(count($featuredItems)) {
 			foreach($featuredItems as $key=>$featuredItem) {
 				##	Add Images
-				$featuredItems[$key]['images'] = $this->getItemImages($featuredItems[$key]['id']);
+				//$featuredItems[$key]['images'] = $this->getItemImages($featuredItems[$key]['id']);
 				##	Get Default Image
-				$featuredItems[$key]['default_image'] = (strlen($featuredItems[$key]['poster_image_source'])) ? $this->getItemDefaultImage($featuredItems[$key]['id'],$featuredItems[$key]['poster_image_source']) : $featuredItems[$key]['poster_image'];
-				$featuredItems[$key]['default_image_large'] = (strlen($featuredItems[$key]['poster_image_source'])) ? $this->getItemDefaultImage($featuredItems[$key]['id'],$featuredItems[$key]['poster_image_source'],'large') : $featuredItems[$key]['poster_image'];
+				//$featuredItems[$key]['default_image'] = (strlen($featuredItems[$key]['poster_image_source'])) ? $this->getItemDefaultImage($featuredItems[$key]['id'],$featuredItems[$key]['poster_image_source']) : $featuredItems[$key]['poster_image'];
+				//$featuredItems[$key]['default_image_large'] = (strlen($featuredItems[$key]['poster_image_source'])) ? $this->getItemDefaultImage($featuredItems[$key]['id'],$featuredItems[$key]['poster_image_source'],'large') : $featuredItems[$key]['poster_image'];
+
+				// Begin Local Cached Image v3.4
+				$images = get_option(sprintf('_topspin_item_images_%s',$featuredItems[$key]['id']));
+				$featuredItems[$key]['default_image'] = (strlen($images['medium'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['medium']) : $featuredItems[$key]['poster_image'];
+				$featuredItems[$key]['default_image_large'] = (strlen($images['large'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['large']) : $featuredItems[$key]['poster_image'];
+				// End Local Cached Image v3.4
+
 			}
 			return $featuredItems;
 		}
@@ -1598,10 +1644,17 @@ EOD;
 		foreach($data as $key=>$row) {
 			$row['campaign'] = unserialize($row['campaign']);
 			##	Add Images
-			$row['images'] = $this->getItemImages($row['id']);
+			//$row['images'] = $this->getItemImages($row['id']);
 			##	Get Default Image
-			$row['default_image'] = (strlen($row['poster_image_source'])) ? $this->getItemDefaultImage($row['id'],$row['poster_image_source']) : $row['poster_image'];
-			$row['default_image_large'] = (strlen($row['poster_image_source'])) ? $this->getItemDefaultImage($row['id'],$row['poster_image_source'],'large') : $row['poster_image'];
+			//$row['default_image'] = (strlen($row['poster_image_source'])) ? $this->getItemDefaultImage($row['id'],$row['poster_image_source']) : $row['poster_image'];
+			//$row['default_image_large'] = (strlen($row['poster_image_source'])) ? $this->getItemDefaultImage($row['id'],$row['poster_image_source'],'large') : $row['poster_image'];
+
+			// Begin Local Cached Image v3.4
+			$images = get_option(sprintf('_topspin_item_images_%s',$row['id']));
+			$row['default_image'] = (strlen($images['medium'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['medium']) : $row['poster_image'];
+			$row['default_image_large'] = (strlen($images['large'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['large']) : $row['poster_image'];
+			// End Local Cached Image v3.4
+
 			if(!in_array($row['id'],$addedIDs)) {
 				array_push($addedIDs,$row['id']);
 				array_push($addedItems,$row);
@@ -1655,10 +1708,17 @@ EOD;
 		$items = $this->wpdb->get_results($this->wpdb->prepare($sql,array($artist_id)));
 		foreach($items as $item) {		
 			##	Add Images
-			$item->images = $this->getItemImages($item->id);
+			//$item->images = $this->getItemImages($item->id);
 			##	Get Default Image
-			$item->default_image = (strlen($item->poster_image_source)) ? $this->getItemDefaultImage($item->id,$item->poster_image_source) : $item->poster_image;
-			$item->default_image_large = (strlen($item->poster_image_source)) ? $this->getItemDefaultImage($item->id,$item->poster_image_source,'large') : $item->poster_image;
+			//$item->default_image = (strlen($item->poster_image_source)) ? $this->getItemDefaultImage($item->id,$item->poster_image_source) : $item->poster_image;
+			//$item->default_image_large = (strlen($item->poster_image_source)) ? $this->getItemDefaultImage($item->id,$item->poster_image_source,'large') : $item->poster_image;
+
+			// Begin Local Cached Image v3.4
+			$images = get_option(sprintf('_topspin_item_images_%s',$item->id));
+			$item->default_image = (strlen($images['medium'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['medium']) : $item->poster_image;
+			$item->default_image_large = (strlen($images['large'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['large']) : $item->poster_image;
+			// End Local Cached Image v3.4
+
 		}
 		return $items;
 	}
@@ -1707,10 +1767,17 @@ EOD;
 EOD;
 		$item = $this->wpdb->get_row($sql,ARRAY_A);
 		##	Add Images
-		$item['images'] = $this->getItemImages($item['id']);
+		//$item['images'] = $this->getItemImages($item['id']);
 		##	Get Default Image
-		$item['default_image'] = (strlen($item['poster_image_source'])) ? $this->getItemDefaultImage($item['id'],$item['poster_image_source']) : $item['poster_image'];
-		$item['default_image_large'] = (strlen($item['poster_image_source'])) ? $this->getItemDefaultImage($item['id'],$item['poster_image_source'],'large') : $item['poster_image'];
+		//$item['default_image'] = (strlen($item['poster_image_source'])) ? $this->getItemDefaultImage($item['id'],$item['poster_image_source']) : $item['poster_image'];
+		//$item['default_image_large'] = (strlen($item['poster_image_source'])) ? $this->getItemDefaultImage($item['id'],$item['poster_image_source'],'large') : $item['poster_image'];
+
+		// Begin Local Cached Image v3.4
+		$images = get_option(sprintf('_topspin_item_images_%s',$item['id']));
+		$item['default_image'] = (strlen($images['medium'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['medium']) : $item['poster_image'];
+		$item['default_image_large'] = (strlen($images['large'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['large']) : $item['poster_image'];
+		// End Local Cached Image v3.4
+
 		return $item;
 	}
 	
@@ -2057,10 +2124,17 @@ EOD;
 		$items = $this->wpdb->get_results($this->wpdb->prepare($sql,array($this->artist_id,$count)));
 		foreach($items as $item) {		
 			##	Add Images
-			$item->images = $this->getItemImages($item->id);
+			//$item->images = $this->getItemImages($item->id);
 			##	Get Default Image
-			$item->default_image = (strlen($item->poster_image_source)) ? $this->getItemDefaultImage($item->id,$item->poster_image_source) : $item->poster_image;
-			$item->default_image_large = (strlen($item->poster_image_source)) ? $this->getItemDefaultImage($item->id,$item->poster_image_source,'large') : $item->poster_image;
+			//$item->default_image = (strlen($item->poster_image_source)) ? $this->getItemDefaultImage($item->id,$item->poster_image_source) : $item->poster_image;
+			//$item->default_image_large = (strlen($item->poster_image_source)) ? $this->getItemDefaultImage($item->id,$item->poster_image_source,'large') : $item->poster_image;
+
+			// Begin Local Cached Image v3.4
+			$images = get_option(sprintf('_topspin_item_images_%s',$item->id));
+			$item->default_image = (strlen($images['medium'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['medium']) : $item->poster_image;
+			$item->default_image_large = (strlen($images['large'])) ? sprintf('%s/%s',$this->_uploadDir['topspin']['url'],$images['large']) : $item->poster_image;
+			// End Local Cached Image v3.4
+
 		}
 		return $items;
 	}
