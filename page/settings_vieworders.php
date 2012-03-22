@@ -51,7 +51,7 @@ $ordersList = $store->orders_get_list();
         </tbody>
         <?php else : ?>
         <tbody id="the-list">
-        	<tr class="no-items"><td colspan="5">There are no orders cached yet.</td></tr>
+        	<tr class="no-items"><td colspan="5">Not available.</td></tr>
         </tbody>
         <?php endif; ?>
         <tfoot>

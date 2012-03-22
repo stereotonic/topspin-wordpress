@@ -13,7 +13,7 @@ function topspin_after_setup_theme() {
 	else {
 		global $store;
 		if($store) {
-			$templateMode = $store->getSetting('topspin_template_mode');
+			$templateMode = $store->settings_get('topspin_template_mode');
 			### CSS/JS
 			wp_enqueue_style('topspin-default',TOPSPIN_PLUGIN_URL.'/templates/topspin-'.$templateMode.'/topspin.css');
 			###	3.1
@@ -30,7 +30,7 @@ function topspin_after_setup_theme() {
 			}
 			wp_enqueue_style('jquery.colorbox',TOPSPIN_PLUGIN_URL.'/resources/js/colorbox/colorbox.css');
 			wp_enqueue_script('jquery.colorbox',TOPSPIN_PLUGIN_URL.'/resources/js/colorbox/jquery.colorbox-min.js',array('jquery'),'1.3.17.2',true);
-			wp_enqueue_script('topspin-core','http://cdn.topspin.net/javascripts/topspin_core.js?aId='.TOPSPIN_ARTIST_ID,null,'3.3',true);
+			//wp_enqueue_script('topspin-core','http://cdn.topspin.net/javascripts/topspin_core.js?aId='.TOPSPIN_ARTIST_ID,null,'3.3',true);
 			wp_enqueue_script('topspin-ready',TOPSPIN_PLUGIN_URL.'/resources/js/topspin.ready.js',array('jquery'),'3.3',true);
 		}
 	}

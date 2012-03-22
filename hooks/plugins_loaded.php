@@ -8,10 +8,19 @@ function topspin_plugins_loaded() {
 	$store = new Topspin_Store();
 
 	// Retrieves and sets the API credentials
-	if(!defined('TOPSPIN_ARTIST_ID')) { define('TOPSPIN_ARTIST_ID',$store->getSetting('topspin_artist_id')); }
-	if(!defined('TOPSPIN_API_USERNAME')) { define('TOPSPIN_API_USERNAME',$store->getSetting('topspin_api_username')); }
-	if(!defined('TOPSPIN_API_KEY')) { define('TOPSPIN_API_KEY',$store->getSetting('topspin_api_key')); }
-	$store->setAPICredentials(TOPSPIN_ARTIST_ID,TOPSPIN_API_USERNAME,TOPSPIN_API_KEY);
+	if(!defined('TOPSPIN_API_USERNAME')) { define('TOPSPIN_API_USERNAME',$store->settings_get('topspin_api_username')); }
+	if(!defined('TOPSPIN_API_KEY')) { define('TOPSPIN_API_KEY',$store->settings_get('topspin_api_key')); }
+
+	if(version_compare(get_option('topspin_version'),TOPSPIN_VERSION,'<')) {
+		update_option('topspin_update_check',0);
+		add_action('init','topspin_upgrade');
+	}
+	else {
+		if(!get_option('topspin_update_check')) {
+			add_action('init','topspin_upgrade');
+		}
+	}
+
 }
 
 ?>

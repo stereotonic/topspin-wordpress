@@ -51,12 +51,9 @@ function topspin_activate() {
 	topspin_run_sql_file('topspin_stores_tag.sql');
 	topspin_run_sql_file('topspin_artists.sql');
 	topspin_run_sql_file('topspin_tags.sql');
-	// Activate Cron
-	wp_schedule_event(time(),'every_5_min','topspin_cron_fetch_items');
 }
 
 function topspin_deactivate() {
-	wp_clear_scheduled_hook('topspin_cron_fetch_items');
 }
 
 ?>

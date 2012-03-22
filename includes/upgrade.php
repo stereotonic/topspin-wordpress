@@ -20,16 +20,6 @@
  			rebuild database after upgrading
  */
 
-if(version_compare(get_option('topspin_version'),TOPSPIN_VERSION,'<')) {
-	update_option('topspin_update_check',0);
-	add_action('init','topspin_upgrade');
-}
-else {
-	if(!get_option('topspin_update_check')) {
-		add_action('init','topspin_upgrade');
-	}
-}
-
 function topspin_upgrade() {
 	global $store;
 	$currentVersion = get_option('topspin_version');
@@ -39,23 +29,25 @@ function topspin_upgrade() {
 		while(false!==($file=readdir($handle))) {
 			if($file!='.' && $file!='..') {
 				$fileInfo = pathinfo($file);
-				$fileVersion = str_replace('.'.$fileInfo['extension'],'',$fileInfo['basename']);
-				##	Run only those between current version and update version
-				if(version_compare($fileVersion,$currentVersion,'>=') && version_compare($fileVersion,TOPSPIN_VERSION,'<=')) {
-					##	Run upgrade script
-					array_push($versions,$fileVersion);
+				if($fileInfo['extension']=="php") {
+					$fileVersion = str_replace('.php','',$fileInfo['filename']);
+					##	Run only those between current version and update version
+					if(version_compare($fileVersion,$currentVersion,'>=') && version_compare($fileVersion,TOPSPIN_VERSION,'<=')) {
+						##	Run upgrade script
+						array_push($versions,$fileVersion);
+					}
 				}
 			}
 		}
 		closedir($handle);
 	}
 	sort($versions);
-	foreach($versions as $version) {
-		$upgradeFile = TOPSPIN_PLUGIN_PATH.'/upgrades/'.$version.'.php';
-		include($upgradeFile);
+	if(count($versions)) {
+		foreach($versions as $version) {
+			$upgradeFile = sprintf('%s/upgrades/%s.php',TOPSPIN_PLUGIN_PATH,$version);
+			if(file_exists($upgradeFile)) { include($upgradeFile); }
+		}
 	}
-	sleep(1);
-	$store->rebuildAll();
 	update_option('topspin_version',TOPSPIN_VERSION);
 	update_option('topspin_update_check',1);
 }
@@ -85,20 +77,22 @@ function topspin_rerun_upgrades($skipCurrent=false) {
 		while(false!==($file=readdir($handle))) {
 			if($file!='.' && $file!='..') {
 				$fileInfo = pathinfo($file);
-				$fileVersion = str_replace('.'.$fileInfo['extension'],'',$fileInfo['basename']);
-				if($skipCurrent && version_compare($fileVersion,TOPSPIN_VERSION,'=')) { continue; }
-				array_push($versions,$fileVersion);
+				if($fileInfo['extension']=="php") {
+					$fileVersion = str_replace('.php','',$fileInfo['filename']);
+					if($skipCurrent && version_compare($fileVersion,TOPSPIN_VERSION,'=')) { continue; }
+					array_push($versions,$fileVersion);
+				}
 			}
 		}
 		closedir($handle);
 	}
 	sort($versions);
-	foreach($versions as $version) {
-		$upgradeFile = TOPSPIN_PLUGIN_PATH.'/upgrades/'.$version.'.php';
-		include($upgradeFile);
+	if(count($versions)) {
+		foreach($versions as $version) {
+			$upgradeFile = sprintf('%s/upgrades/%s.php',TOPSPIN_PLUGIN_PATH,$version);
+			if(file_exists($upgradeFile)) { include($upgradeFile); }
+		}
 	}
-	sleep(1);
-	$store->rebuildAll();
 	update_option('topspin_version',TOPSPIN_VERSION);
 	update_option('topspin_update_check',1);
 }

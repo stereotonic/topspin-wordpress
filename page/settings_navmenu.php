@@ -15,7 +15,7 @@
 global $store;
 $parentStores = $store->stores_get_nested_list();
 
-$navmenuStatus = $store->getSetting('topspin_navmenu');
+$navmenuStatus = $store->settings_get('topspin_navmenu');
 
 $success = '';
 
@@ -23,7 +23,7 @@ $success = '';
 if($_SERVER['REQUEST_METHOD']=='POST') {
 	//Set activation status
 	$navmenuStatus = (isset($_POST['navmenu-on']) && $_POST['navmenu-on']=='on') ? 1 : 0;
-	$store->setSetting('topspin_navmenu',$navmenuStatus);
+	$store->settings_set('topspin_navmenu',$navmenuStatus);
 
 	//Set menu orders
 	if(count($_POST['storesList'])) {

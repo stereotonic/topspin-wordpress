@@ -267,6 +267,11 @@ This plugin is in open development.  Over the weeks and months we hope to roll o
 
 == Changelog ==
 
+= 3.4.0 =
+* Organized plugin folder
+* Removed some deprecated files
+* Updated cron procedure
+
 = 3.3.3.3 =
 * Fixed lightbox handler with auto-filled anchor tags - @ezmiller
 

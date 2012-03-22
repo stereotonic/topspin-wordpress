@@ -37,7 +37,7 @@ function topspin_get_item($item_id) {
 	 *		An array of the item's data
 	 */
 	global $store;
-	$item = $store->getItem($item_id);
+	$item = $store->items_get($item_id);
 	$item['campaign'] = unserialize($item['campaign']);
 	return $item;
 }

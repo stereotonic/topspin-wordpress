@@ -2,11 +2,13 @@
 
 /*
  *
- *	Last Modified:			January 24, 2011
+ *	Last Modified:			March 27, 2011
  *
  *	--------------------------------------
  *	Change Log
  *	--------------------------------------
+ *	2012-03-21
+ 		- Added artist-based stores
  *	2012-01-24
  		- Added nav menu shortcode to edit/update handler
  *	2011-09-23
@@ -40,7 +42,6 @@ global $store;
 
 if(!TOPSPIN_API_USERNAME) { $store->setError('API Username is not set. Please check your <a href="'.get_bloginfo('wpurl').'/wp-admin/admin.php?page=topspin/page/settings_general">settings</a>.'); }
 elseif(!TOPSPIN_API_KEY) { $store->setError('API Key is not set. Please check your <a href="'.get_bloginfo('wpurl').'/wp-admin/admin.php?page=topspin/page/settings_general">settings</a>.'); }
-elseif(!TOPSPIN_ARTIST_ID) { $store->setError('Artist ID is not set. Please check your <a href="'.get_bloginfo('wpurl').'/wp-admin/admin.php?page=topspin/page/settings_general">settings</a>.'); }
 
 $action = (isset($_GET['action'])) ? $_GET['action'] : 'edit';
 $error = $store->getError();
@@ -49,6 +50,7 @@ $success = '';
 ### Set Default Value
 $storeData = array(
 	'id' => 0,
+	'artist_id' => 0,
 	'name' => '',
 	'slug' => '',
 	'items_per_page' => 12,
@@ -60,7 +62,7 @@ $storeData = array(
 	'internal_name' => '',
 	'featured_item' => array(),
 	'offer_types' => $store->getOfferTypes(),
-	'tags' => $store->getTagList()
+	'tags' => array()
 );
 $storePost = array();
 
@@ -116,7 +118,7 @@ switch($action) {
 				$newPage = get_post($pageID);
 				$storeData['slug'] = $newPage->post_name;
 				if($pageID) {
-					$storeID = $store->createStore($storeData,$pageID);
+					$storeID = $store->stores_create($storeData,$pageID);
 					if($storeID) {
 						$storeData['id'] = $storeID;
 						update_post_meta($pageID,'_wp_page_template',$storeData['page_template']);
@@ -156,6 +158,22 @@ switch($action) {
 			<input type="hidden" name="id" value="<?php echo (isset($storeData['id']))?$storeData['id']:0;?>" />
 			<table class="form-table">
 				<tbody>
+					<tr valign="top">
+						<th scope="row"><label for="topspin_artist_id">Artist</label></th>
+						<td>
+							<?php
+							$artistsIDs = $store->settings_get('topspin_artist_id');
+							$artistsList = $store->artists_get_list(array('artist_ids'=>$artistsIDs));
+							?>
+							<select id="topspin_artist_id" name="artist_id">
+								<?php foreach($artistsList as $artist) : ?>
+									<?php $artistSelected = ($artist['id']==$storeData['artist_id']) ? 'selected="selected"' : ''; ?>
+									<option value="<?php echo $artist['id']; ?>" <?php echo $artistSelected; ?>><?php echo $artist['name']; ?></option>
+								<?php endforeach; ?>
+							</select>
+							<span class="description"></span>
+						</td>
+					</tr>
 					<tr valign="top">
 						<th scope="row"><label for="topspin_name">Store Name</label></th>
 						<td>
@@ -318,7 +336,7 @@ switch($action) {
 	                            <ul id="topspin-preview-item-listing" class="item-listing">
 		                        <?php if(isset($sortedItems) && count($sortedItems)) : ?>
 		                            <?php foreach($sortedItems as $item) : ?>
-		                            <li id="preview-item-<?php echo $item['id'];?>">
+		                            <li id="preview-item-<?php echo $item['id'];?>" class="preview-item">
 		                                <div class="item-canvas">
 		                                    <div class="item-canvas-cell">
 			                                    <img src="<?php echo $item['default_image'];?>" width="150" alt="<?php echo $item['name'];?>" /><br/>
@@ -328,7 +346,7 @@ switch($action) {
 		                            </li>
 		                            <?php endforeach; ?>
 		                        <?php else : ?>
-	                        		<li>There are no items to be displayed.</li>
+	                        		<li class="no-item">There are no items to be displayed.</li>
 		                        <?php endif; ?>
 	                           	</ul>
 	            			</td>
@@ -346,7 +364,7 @@ switch($action) {
             </h3>
 
 			<?php //Retrieve the sorted/filtered store items
-	        $sortedItems = ($storeData['id']) ? $store->getStoreItems($storeData['id']) : $store->getFilteredItems($defaultOfferTypes,$defaultTags,TOPSPIN_ARTIST_ID);
+	        $sortedItems = ($storeData['id']) ? $store->getStoreItems($storeData['id']) : $store->items_get_filtered_list($defaultOfferTypes,$defaultTags,$storeData['artist_id']);
 	        ?>
 
             <table id="topspin-featured-items-table" class="form-table">
@@ -424,12 +442,21 @@ switch($action) {
 		var updateItemsOrder = function() {
 			var aOrder = new Array();
 			var containers = jQuery('ul.item-sortable > li');
-			containers.each(function() {
-				var itemID = jQuery(this).attr('id');
-				itemID = itemID.split('-');
-				aOrder.push(itemID[1]);
-			});
+			if(containers.length) {
+				containers.each(function(idx,el) {
+					if(jQuery(el).hasClass('preview-item')) {
+						var itemID = jQuery(this).attr('id');
+						itemID = itemID.split('-');
+						aOrder.push(itemID[1]);
+					}
+				});
+			}
 			jQuery('input[name=items_order]').val(aOrder.join(','));
+		};
+		
+		var updateItemsTags = function() {
+			var artist_id = jQuery('#topspin_artist_id').val();
+			refreshTags(artist_id);
 		};
 		
 		var checkItemDisplayStatus = function() {
@@ -444,7 +471,7 @@ switch($action) {
 				}
 			});
 		}
-		
+
 		//Retrieves a comma-delimited string of the checked offer types
 		var getCheckedOfferTypes = function() {
 			var offer_types = '';
@@ -532,13 +559,13 @@ switch($action) {
 				jQuery.each(json,function(itemKey,itemData) {
 					switch(sortBy) {
 						case 'tag':
-							if(itemData.tag_name==sortName) {
+							if(itemData.tag_name.toLowerCase()==sortName.toLowerCase()) {
 								addedIDs.push(itemData.id);
 								sortedJson.push(itemData);
 							}
 							break;
 						case 'offertype':
-							if(itemData.offer_type==sortName) {
+							if(itemData.offer_type.toLowerCase()==sortName.toLowerCase()) {
 								addedIDs.push(itemData.id);
 								sortedJson.push(itemData);
 							}
@@ -622,6 +649,7 @@ switch($action) {
 				url : ajaxurl,
 				data : {
 					action : 'topspin_get_items',
+					store_id : <?php echo $storeData['id']; ?>,
 					offer_types : offer_types,
 					tags : tags,
 					order : order
@@ -717,7 +745,45 @@ switch($action) {
 			}
 		};
 
+		var refreshTags = function(artist_id) {
+			var data = {
+				action : 'topspin_refresh_tags',
+				store_id : <?php echo $storeData['id']; ?>,
+				artist_id : artist_id
+			};
+			jQuery.getJSON(ajaxurl,data,function(ret) {
+				if(ret.success) {
+					jQuery('#topspin_tags').empty();
+					jQuery.each(ret.response.tags,function(idx,el) {
+						var item = jQuery('<li />');
+						var label = jQuery('<label />');
+						var input = jQuery('<input />');
+						var itemTitle = jQuery('<span />');
+						item.attr('id','tag-'+el.name).addClass('menu-item');
+						label.appendTo(item);
+						input.attr('type','checkbox').attr('name','tags[]').val(el.name).appendTo(label);
+						if(parseInt(el.status)) { input.attr('checked','checked'); }
+						label.append('&nbsp;&nbsp;&nbsp;');
+						itemTitle.addClass('item-title').html(el.name).appendTo(label);
+						item.appendTo('#topspin_tags');
+					});
+				}
+				updateItemDisplay();
+			});
+		};
+
 		jQuery(function($) {
+
+			//Update the Tags based on the selected artist
+			$('#topspin_artist_id').live('change',function(e) {
+				var artist_id = $(this).val();
+				refreshTags(artist_id);
+			});
+			
+			//Update preview when tags are clicked
+			$('#topspin_tags .menu-item input[name="tags[]"]').live('click',function(e) {
+				updateItemDisplay();
+			});
 
 			//AJAX Items Update
 			$('select#topspin_default_sorting').bind('change',function() {
@@ -776,7 +842,7 @@ switch($action) {
 					updateItemsOrder();
 				}
 			});
-		
+
 			//Item Hiding
 			$('ul.item-sortable li .item-hide').live('click',function() {
 				//"item-12345:0"	Hidden
@@ -799,9 +865,11 @@ switch($action) {
 				$(this).prev().toggleClass('faded');
 				updateItemsOrder();
 			});
-			
+
 			checkItemDisplayStatus();
+			updateItemsTags();
 			updateItemsOrder();
+			
 			<?php if($storeData['id'] && $storeData['default_sorting_by']=='manual') : ?>
 				$('#topspin_manual_sorting').fadeIn();
 			<?php else : ?>

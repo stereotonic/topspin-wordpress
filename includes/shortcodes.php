@@ -42,7 +42,7 @@ function topspin_shortcode_store_item($atts) {
 		if($featureditem) {
 			ob_start();
 			##	Template File
-			$templateMode = $store->getSetting('topspin_template_mode');
+			$templateMode = $store->settings_get('topspin_template_mode');
 			$templatefile = TOPSPIN_PLUGIN_PATH.'/templates/topspin-'.$templateMode.'/featured-item.php';
 			##	3.1
 			if(file_exists(TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/featured-item.php')) { $templatefile = TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/featured-item.php'; }
@@ -98,7 +98,7 @@ function topspin_shortcode_buy_buttons($atts) {
 	}
 	ob_start();
 	##	Template File
-	$templateMode = $store->getSetting('topspin_template_mode');
+	$templateMode = $store->settings_get('topspin_template_mode');
 	$templatefile = TOPSPIN_PLUGIN_PATH.'/templates/topspin-'.$templateMode.'/item-listings.php';
 	##	3.1
 	if(file_exists(TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/item-listings.php')) { $templatefile = TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/item-listings.php'; }
@@ -127,7 +127,7 @@ function topspin_shortcode_featured_item($atts) {
 	if(count($featuredItems)) {
 		ob_start();
 		##	Template File
-		$templateMode = $store->getSetting('topspin_template_mode');
+		$templateMode = $store->settings_get('topspin_template_mode');
 		$templatefile = TOPSPIN_PLUGIN_PATH.'/templates/topspin-'.$templateMode.'/featured-item.php';
 		##	3.1
 		if(file_exists(TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/featured-item.php')) { $templatefile = TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/featured-item.php'; }
@@ -157,10 +157,10 @@ function topspin_shortcode_store_nav_menu($atts) {
 	$a = shortcode_atts($defaults,$atts);
 	$storeID = $a['id'];
 	$storelist = $store->stores_get_nested_list();
-	if($store->getSetting('topspin_navmenu') && count($storelist)) {
+	if($store->settings_get('topspin_navmenu') && count($storelist)) {
 		ob_start();
 		##	Template File
-		$templateMode = $store->getSetting('topspin_template_mode');
+		$templateMode = $store->settings_get('topspin_template_mode');
 		$templatefile = TOPSPIN_PLUGIN_PATH.'/templates/topspin-'.$templateMode.'/nav-menu.php';
 		##	3.1
 		if(file_exists(TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/nav-menu.php')) { $templatefile = TOPSPIN_CURRENT_THEME_PATH.'/topspin-'.$templateMode.'/nav-menu.php'; }

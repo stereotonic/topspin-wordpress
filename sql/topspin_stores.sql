@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS `<?php echo $wpdb->prefix;?>topspin_stores` (
   `store_id` int(11) NOT NULL auto_increment,
   `post_id` int(11) NOT NULL,
+  `artist_id` int(11) NOT NULL,
   `status` varchar(50) NOT NULL,
   `created_date` timestamp NOT NULL default CURRENT_TIMESTAMP,
   `items_per_page` int(11) NOT NULL,
@@ -12,5 +13,6 @@ CREATE TABLE IF NOT EXISTS `<?php echo $wpdb->prefix;?>topspin_stores` (
   `featured_item` int(11) NOT NULL,
   `page_template` varchar(255) NOT NULL,
   `internal_name` varchar(255) NOT NULL,
-  PRIMARY KEY  (`store_id`)
+  PRIMARY KEY  (`store_id`),
+  KEY `artist_id` (`artist_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;

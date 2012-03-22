@@ -5,6 +5,8 @@
  *	----------------------------------
  *	Change Log
  *	----------------------------------
+ *	2012-03-22
+ 		- Updated topspin_table_column_add to allow for creating indexes
  *	2012-01-09
  		- Updated topspin_table_column_add
  *	2011-09-07
@@ -52,6 +54,8 @@ function topspin_table_column_add($table,$column,$type='text',$options=null) {
 	 *			@first (bool)			Add to the beginning of table?
 	 *			@autoIncrement (bool)	Add auto increment?
 	 *			@primaryKey (bool)		Make it as a primary key?
+	 *			@index (bool)		Make it as an index key?
+	 *			@after (string)			Add after the column
 	 *
 	 *	RETURNS:
 	 *		true if the column exists in the table
@@ -61,15 +65,25 @@ function topspin_table_column_add($table,$column,$type='text',$options=null) {
 	$defaults = array(
 		'first' => false,
 		'autoIncrement' => false,
-		'primaryKey' => false
+		'primaryKey' => false,
+		'index' => false,
+		'after' => null
 	);
 	$options = array_merge($defaults,$options);
 	$first = ($options['first']) ? 'FIRST' : '';
+	$afterColumn = (!$first && $options['after']) ? 'AFTER `'.$options['after'].'`' : '';
 	$autoIncrement = ($options['autoIncrement']) ? 'AUTO_INCREMENT' : '';
 	$primaryKey = ($options['primaryKey']) ? 'ADD PRIMARY KEY (`'.$column.'`)' : '';
 $sql = <<<EOD
-ALTER TABLE `{$wpdb->prefix}{$table}` ADD `{$column}` {$type} NOT NULL {$first} {$autoIncrement} {$primaryKey};
+ALTER TABLE `{$wpdb->prefix}{$table}` ADD `{$column}` {$type} NOT NULL {$first} {$afterColumn} {$autoIncrement} {$primaryKey};
 EOD;
+	$wpdb->query($sql);
+	if($options['index']) { topspin_table_column_add_index($table,$column); }
+}
+
+function topspin_table_column_add_index($table,$column) {
+	global $wpdb;
+	$sql = sprintf('ALTER TABLE %s ADD INDEX(`%s`)',sprintf('%s%s',$wpdb->prefix,$table),$column);
 	$wpdb->query($sql);
 }
 

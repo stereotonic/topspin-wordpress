@@ -1,11 +1,14 @@
 <?php
 
 /*
- *	Last Modified:		January 24, 2011
+ *	Last Modified:		March 27, 2012
  *
  *	----------------------------------
  *	Change Log
  *	----------------------------------
+ *	2012-03-21
+ 		- Split settings into subgroups
+ 		- Migrated artist to be selected by Store
  *	2012-01-24
  		- Nav menu feature @eThan
  *	2011-08-01
@@ -21,68 +24,24 @@
  		- Added a new field called "Template"
  */
 
-global $store;
-$success = '';
+global $store, $topspin_success;
 
-if($_SERVER['REQUEST_METHOD']=='POST') {
-	if(isset($_POST['action'])) {
-		switch($_POST['action']) {
-			case "rerun_upgrades":
-				if(isset($_POST['fix_upgrades'])) { topspin_rerun_upgrades(); }
-				$success = 'Plugin upgrade scripts successfully ran.';
-				break;
-			case "rebuild_cache":
-				if(isset($_POST['cache_all'])) { $store->rebuildAll(); }
-				$success = 'Cache successfully updated.';
-				break;
-			case "general_settings":
-			default:
-				unset($_POST['action']);
-				## Empty all stores and store settings if different artist ID is set
-				if($_POST['topspin_artist_id']!=$store->getSetting('topspin_artist_id')) {
-					$stores = $store->stores_get_list();
-					if(count($stores)) {
-						foreach($stores as $_store) {
-							$store->deleteStore($_store->store_id,1);
-							wp_delete_post($_store->ID,1);	//deletes the page from the posts table
-						}
-					}
-				}
-
-				## Set Each Option
-				foreach($_POST as $key=>$value) {
-					$store->setSetting($key,$value); //Update all posted settings on this page.
-					update_option($key,$value); //Update WordPress options table (v2.0)
-				}
-				$store->rebuildAll();
-
-				##	If Artists is Unset (New)
-				if(!isset($_POST['topspin_artist_id'])) {
-					$artistsList = $store->getArtistsList();
-					$store->setSetting('topspin_artist_id',$artistsList[0]['id']);
-					update_option('topspin_artist_id',$artistsList[0]['id']);
-				}
-				$success = 'Settings saved.';
-				break;
-		}
-	}
-}
 $apiError = '';
-$apiStatus = $store->checkAPI();
+$apiStatus = $store->api_check();
 if($apiStatus) { $apiError = $apiStatus->error_detail; }
+
 ?>
 
 <div class="wrap">
     <h2>Topspin General Settings</h2>
 
-    <?php if($success) : ?><div class="updated settings-error"><p><strong><?php echo $success; ?></strong></p></div><?php endif; ?>
-
+    <?php if($topspin_success) : ?><div class="updated settings-error"><p><strong><?php echo $topspin_success; ?></strong></p></div><?php endif; ?>
     <?php if($apiError) : ?><div class="error settings-error"><p><strong><?php echo $apiError; ?></strong></p></div><?php endif; ?>
 
     <form name="topspin_form" method="post" action="<?php echo $_SERVER['REQUEST_URI'];?>">
-    <input type="hidden" name="action" value="general_settings" />
+    <input type="hidden" name="action" value="topspin_general_settings" />
 	<?php
-	$artistsList = $store->getArtistsList();
+	$artistsList = $store->artists_get_list();
 	$totalArtists = count($artistsList);
 	?>
     <h3>Topspin API Settings</h3>
@@ -91,41 +50,75 @@ if($apiStatus) { $apiError = $apiStatus->error_detail; }
             <tr valign="top">
                 <th scope="row"><label for="topspin_api_username">Topspin API User</label></th>
                 <td>
-                    <input id="topspin_api_username" class="regular-text" type="text" value="<?php echo $store->getSetting('topspin_api_username'); ?>" name="topspin_api_username" />
+                    <input id="topspin_api_username" class="regular-text" type="text" value="<?php echo $store->settings_get('topspin_api_username'); ?>" name="topspin_api_username" />
                     <span class="description">Go to <a href="http://app.topspin.net/account/profile/" target="_blank">Account Settings</a> to obtain your API credentials.</span>
                 </td>
             </tr>
             <tr valign="top">
                 <th scope="row"><label for="topspin_api_key">Topspin API Key</label></th>
                 <td>
-                    <input id="topspin_api_key" class="regular-text" type="text" value="<?php echo $store->getSetting('topspin_api_key'); ?>" name="topspin_api_key" />
+                    <input id="topspin_api_key" class="regular-text" type="text" value="<?php echo $store->settings_get('topspin_api_key'); ?>" name="topspin_api_key" />
                     <span class="description">Go to <a href="http://app.topspin.net/account/profile/" target="_blank">Account Settings</a> to obtain your API credentials.</span>
                 </td>
             </tr>
+		</table>
+	</table>
+
+	<?php if(!$apiError) : ?>
+	<h3>Cache Settings</h3>
+	<table class="form-table">
+		<tbody>
+            <tr valign="top">
+                <th scope="row"><label for="topspin_cache_system">Cache System</label></th>
+                <td>
+                	<?php $selectedCacheSystem = $store->settings_get('topspin_cache_system'); ?>
+					<select id="topspin_cache_system" name="topspin_cache_system"><
+						<option value="WP-Cron" <?php echo ($selectedCacheSystem=="WP-Cron") ? 'selected="selected"' : ''; ?>>WP-Cron</option>
+						<option value="Manual" <?php echo ($selectedCacheSystem=="Manual") ? 'selected="selected"' : ''; ?>>Manual</option>
+					</select>
+					<div class="description">
+						<p>Select manual if you want to handle caching manually. If you have a large inventory, it is recommended to use Manual and setup a server crontab.</p>
+						<p><code>PHP Cron Script: <?php echo sprintf('%s/cron.php',TOPSPIN_PLUGIN_URL); ?></code></p>
+					</div>
+				</td>
+			</tr>
             <tr valign="top">
                 <th scope="row"><label for="topspin_artist_id">Topspin Artist</label></th>
                 <td>
-					<?php if(count($artistsList)>1) : ?>
-					<select id="topspin_artist_id" name="topspin_artist_id">
-	                	<?php $selected_artist = $store->getSetting('topspin_artist_id');
-	                	foreach($artistsList as $artist) : $artist_selected=($selected_artist==$artist['id'])?'selected="selected"':''; ?>
-	                		<option value="<?php echo $artist['id'];?>" <?php echo $artist_selected;?>><?php echo $artist['name'];?> (<?php echo $artist['id'];?>)</option>
-	                	<?php endforeach; ?>
-	                </select>
-                    <div class="description">
-	                    PLEASE NOTE: You have multiple Artist IDs associated with your API user / key combination.  You can easily select which artist to use for your store, however if you change the Artist after you have already created Store Pages, those pages will become blank since the old Artist's Offers will no longer exist in the plugin's cache.  You'll need to edit those pages and rebuild the Offers. 
-                    </div>
+					<?php if($totalArtists) : ?>
+						<ul class="topspin-artists-list">
+	                		<?php foreach($artistsList as $artist) : ?>
+		                		<?php
+		                		$checked = '';
+		                		$selectedArtist = $store->settings_get('topspin_artist_id');
+		                		if(is_array($selectedArtist)) {
+		                			if(in_array($artist['id'],$selectedArtist)) { $checked = 'checked="checked"'; }
+		                		}
+		                		else if(is_string($selectedArtist)) {
+		                			if($artist['id']==$selectedArtist) { $checked = 'checked="checked"'; }
+		                		}
+		                		?>
+	                			<li><input type="checkbox" name="topspin_artist_id[]" value="<?php echo $artist['id'];?>" <?php echo $checked; ?> /><?php echo $artist['name'];?> (<?php echo $artist['id'];?>)</li>
+	                		<?php endforeach; ?>
+	                	</ul>
+	                    <div class="description"><p>PLEASE NOTE: You have multiple Artist IDs associated with your API user / key combination. Check all the artists you want to cache on your website.</p></div>
                     <?php elseif($totalArtists && $totalArtists==1) : ?>
-                   	<input type="hidden" name="topspin_artist_id" value="<?php echo $artistsList[0]['id'];?>" />
+                   	<input type="hidden" name="topspin_artist_id[]" value="<?php echo $artistsList[0]['id'];?>" />
                     <input class="artist-name regular-text" type="text" disabled="disabled" value="<?php echo $artistsList[0]['name'];?> (<?php echo $artistsList[0]['id'];?>)" />
 					<?php endif; ?>
                 </td>
             </tr>
+        </tbody>
+	</table>
+
+	<h3>Template Settings</h3>
+	<table class="form-table">
+		<tbody>
             <tr valign="top">
                 <th scope="row"><label for="topspin_api_key">Template:</label></th>
                 <td>
                 	<?php
-                	$selectedTemplate = $store->getSetting('topspin_template_mode');
+                	$selectedTemplate = $store->settings_get('topspin_template_mode');
                 	?>
                     <select id="topspin_template_mode" name="topspin_template_mode">
                     	<option value="simplified" <?php echo ($selectedTemplate=='simplified')?'selected="selected"':'';?>>Simplified</option>
@@ -168,28 +161,43 @@ if($apiStatus) { $apiError = $apiStatus->error_detail; }
         </tbody>
     </table>
 
+	<script type="text/javascript" language="javascript">
+	jQuery(function($) {
+		$('#topspin_template_mode').change(function() {
+			var open = $(this).val();
+			var close = (open=='simplified') ? 'standard' : 'simplified';
+			$('.template-'+close).slideUp(function() {
+				$('.template-'+open).slideDown();
+			});
+		});
+	});
+	</script>
+
+	<?php endif; ?>
+
     <p class="submit"><input type="submit" class="button-primary" value="<?php _e('Save Changes'); ?>" /></p>
     </form>
 
+    <?php if(!$apiError) : ?>
     <h3>Database Cache</h3>
     <table class="form-table">
 		<form name="topspin_form_rebuild_cache" method="post" action="<?php echo $_SERVER['REQUEST_URI'];?>">
-	    <input type="hidden" name="action" value="rebuild_cache" />
+	    <input type="hidden" name="action" value="topspin_sync_cache" />
     	<tbody>
         	<tr valign="top">
-            	<th scope="row"><label>Rebuild Database</label></th>
+            	<th scope="row"><label>Sync Database</label></th>
                 <td>
-					<input type="submit" name="cache_all" class="button-primary" value="<?php _e('Rebuild'); ?>" />
+					<input type="submit" name="cache_all" class="button-primary" value="<?php _e('Sync'); ?>" />
                     <span class="description">
-                    	<?php echo ($last_cache_all=$store->getSetting('topspin_last_cache_all')) ? 'Last built: '.date('Y-m-d h:i:sa',$last_cache_all+(3600*get_option('gmt_offset'))) : 'No action yet.'; ?>
-                    	(Next build in: <?php echo (wp_next_scheduled('topspin_cron_fetch_items')-time()); ?> seconds)
+                    	<?php $last_cached = $store->settings_get('topspin_last_cache_all'); ?>
+                    	Last synced: <?php echo ($last_cached) ? human_time_diff($last_cached).' ago' : 'No action yet'; ?>
                     </span>
                 </td>
             </tr>
         </tbody>
 		</form>
 		<form name="topspin_form_rerun_upgrades" method="post" action="<?php echo $_SERVER['REQUEST_URI'];?>">
-	    <input type="hidden" name="action" value="rerun_upgrades" />
+	    <input type="hidden" name="action" value="topspin_rerun_upgrades" />
     	<tbody>
         	<tr valign="top">
             	<th scope="row"><label>Fix Plugin Installation</label></th>
@@ -201,17 +209,6 @@ if($apiStatus) { $apiError = $apiStatus->error_detail; }
         </tbody>
 		</form>
     </table>
-    
-</div>
+    <?php endif; ?>
 
-<script type="text/javascript" language="javascript">
-jQuery(function($) {
-	$('#topspin_template_mode').change(function() {
-		var open = $(this).val();
-		var close = (open=='simplified') ? 'standard' : 'simplified';
-		$('.template-'+close).slideUp(function() {
-			$('.template-'+open).slideDown();
-		});
-	});
-});
-</script>
+</div>

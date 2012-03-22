@@ -19,6 +19,6 @@ topspin_run_sql_file('topspin_items_images.sql');
 topspin_run_sql_file('topspin_artists.sql');
 
 ##	Adds New Settings Option 'topspin_template_mode'
-if(!$store->settingExist('topspin_template_mode')) { $store->setSetting('topspin_template_mode','standard'); }
+if(!$store->settings_exists('topspin_template_mode')) { $store->settings_set('topspin_template_mode','standard'); }
 
 ?>

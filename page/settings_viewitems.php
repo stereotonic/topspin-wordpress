@@ -2,11 +2,13 @@
 
 /*
  *
- *	Last Modified:		September 22, 2011
+ *	Last Modified:		March 27, 2012
  *
  *	--------------------------------------
  *	Change Log
  *	--------------------------------------
+ *	2012-03-27
+ 		- Updated list
  *	2011-09-22
  		- Removed Add New button
  *	2011-07-26
@@ -15,7 +17,7 @@
  */
 
 global $store;
-$itemsList = $store->getArtistItems();
+$itemsList = $store->items_get_list();
 ?>
 
 <div class="wrap">
@@ -27,6 +29,7 @@ $itemsList = $store->getArtistItems();
             	<th scope="col" id="id" class="id-column">ID</th>
             	<th scope="col" id="thumb" class="thumb-column">Thumb</th>
             	<th scope="col" id="title" class="title-column">Title</th>
+            	<th scope="col" id="artist" class="artist-column">Artist</th>
             	<th scope="col" id="price" class="price-column">Price</th>
             	<th scope="col" id="offertype" class="offertype-column">Offer Type</th>
             	<th scope="col" id="tags" class="tags-column">Tags</th>
@@ -40,6 +43,7 @@ $itemsList = $store->getArtistItems();
             	<td class="item-id"><?php echo $item->id; ?></td>
             	<td class="item-thumb"><img src="<?php echo $item->default_image; ?>" width="60" alt="" /></td>
             	<td class="item-title"><strong><?php echo $item->name; ?></strong></td>
+            	<td class="item-artist"><?php echo $item->artist_name; ?></td>
             	<td class="item-price"><?php echo $item->symbol; ?><?php echo $item->price; ?></td>
             	<td class="item-offertype"><?php echo $item->offer_type_name; ?></td>
             	<td class="item-tags"><?php echo $item->tags; ?></td>
@@ -57,6 +61,7 @@ $itemsList = $store->getArtistItems();
             	<th scope="col" id="id" class="id-column">ID</th>
             	<th scope="col" id="thumb" class="thumb-column">Thumb</th>
             	<th scope="col" id="title" class="title-column">Title</th>
+            	<th scope="col" id="artist" class="artist-column">Artist</th>
             	<th scope="col" id="price" class="price-column">Price</th>
             	<th scope="col" id="offertype" class="offertype-column">Offer Type</th>
             	<th scope="col" id="tags" class="tags-column">Tags</th>

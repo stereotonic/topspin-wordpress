@@ -47,7 +47,7 @@ $itemsList = $store->product_get_most_popular_list();
         </tbody>
         <?php else : ?>
         <tbody id="the-list">
-        	<tr class="no-items"><td colspan="5">There are no items cached yet.</td></tr>
+        	<tr class="no-items"><td colspan="5">No available.</td></tr>
         </tbody>
         <?php endif; ?>
         <tfoot>
