@@ -1578,6 +1578,7 @@ EOD;
 				else { $in_offer_type .= ', \''.$offer_type.'\''; }
 			}
 		}
+		$WHERE_ARTIST_ID = ($artist_id) ? sprintf(' AND %stopspin_items.artist_id = %d',$this->wpdb->prefix,$artist_id) : '';
 		$WHERE_IN_OFFER_TYPE  = ($total_offer_types) ? ' AND '.$this->wpdb->prefix.'topspin_items.offer_type IN ('.$in_offer_type.')' : '';
 		## In Tags
 		$in_tags = '';
@@ -1623,13 +1624,14 @@ EOD;
 		LEFT JOIN
 			{$this->wpdb->prefix}topspin_offer_types ON {$this->wpdb->prefix}topspin_items.offer_type = {$this->wpdb->prefix}topspin_offer_types.type
 		WHERE
-			{$this->wpdb->prefix}topspin_items.artist_id = %d
+			1 = 1
+			{$WHERE_ARTIST_ID}
 			{$WHERE_IN_TAGS}
 			{$WHERE_IN_OFFER_TYPE}
 		ORDER BY
 			{$order_by}
 EOD;
-		$data = $this->wpdb->get_results($this->wpdb->prepare($sql,$artist_id),ARRAY_A);
+		$data = $this->wpdb->get_results($this->wpdb->prepare($sql),ARRAY_A);
 		foreach($data as $key=>$row) {
 			$row['campaign'] = unserialize($row['campaign']);
 			##	Add Images

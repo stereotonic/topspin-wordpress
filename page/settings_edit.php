@@ -649,6 +649,7 @@ switch($action) {
 				url : ajaxurl,
 				data : {
 					action : 'topspin_get_items',
+					artist_id : jQuery('#topspin_artist_id').val(),
 					store_id : <?php echo $storeData['id']; ?>,
 					offer_types : offer_types,
 					tags : tags,
@@ -786,8 +787,8 @@ switch($action) {
 			});
 
 			//AJAX Items Update
-			$('select#topspin_default_sorting').bind('change',function() {
-				var sortBy = $('select#topspin_default_sorting_by option:selected').val();
+			$('select#topspin_default_sorting, select#topspin_default_sorting_by').live('change',function() {
+				var sortBy = $('select#topspin_default_sorting_by').val();
 				if(sortBy=='manual') { return true; }
 				else { updateItemDisplay(); }
 			});
