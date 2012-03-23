@@ -86,6 +86,7 @@ if($apiStatus) { $apiError = $apiStatus->error_detail; }
                 <th scope="row"><label for="topspin_artist_id">Topspin Artist</label></th>
                 <td>
 					<?php if($totalArtists) : ?>
+	                    <div class="description"><p>PLEASE NOTE: You have multiple Artist IDs associated with your API user / key combination. Check all the artists you want to cache on your website.</p></div>
 						<ul class="topspin-artists-list">
 	                		<?php foreach($artistsList as $artist) : ?>
 		                		<?php
@@ -98,13 +99,19 @@ if($apiStatus) { $apiError = $apiStatus->error_detail; }
 		                			if($artist['id']==$selectedArtist) { $checked = 'checked="checked"'; }
 		                		}
 		                		?>
-	                			<li><input type="checkbox" name="topspin_artist_id[]" value="<?php echo $artist['id'];?>" <?php echo $checked; ?> /><?php echo $artist['name'];?> (<?php echo $artist['id'];?>)</li>
+	                			<li class="topspin-artist-item">
+	                				<div class="topspin-artist-item-thumb"><img src="<?php echo $artist['avatar_image']; ?>" alt="" /></div>
+	                				<div class="topspin-artist-item-footer">
+		                				<input id="topspin_artist_<?php echo $artist['id']; ?>" type="checkbox" name="topspin_artist_id[]" value="<?php echo $artist['id'];?>" <?php echo $checked; ?> />
+		                				&nbsp; <label for="topspin_artist_<?php echo $artist['id']; ?>"><?php echo $artist['name'];?> (<?php echo $artist['id'];?>)</label>
+									</div>
+	                			</li>
 	                		<?php endforeach; ?>
+                			<li class="clear"></div>
 	                	</ul>
-	                    <div class="description"><p>PLEASE NOTE: You have multiple Artist IDs associated with your API user / key combination. Check all the artists you want to cache on your website.</p></div>
                     <?php elseif($totalArtists && $totalArtists==1) : ?>
-                   	<input type="hidden" name="topspin_artist_id[]" value="<?php echo $artistsList[0]['id'];?>" />
-                    <input class="artist-name regular-text" type="text" disabled="disabled" value="<?php echo $artistsList[0]['name'];?> (<?php echo $artistsList[0]['id'];?>)" />
+	                   	<input type="hidden" name="topspin_artist_id[]" value="<?php echo $artistsList[0]['id'];?>" />
+	                    <input class="artist-name regular-text" type="text" disabled="disabled" value="<?php echo $artistsList[0]['name'];?> (<?php echo $artistsList[0]['id'];?>)" />
 					<?php endif; ?>
                 </td>
             </tr>

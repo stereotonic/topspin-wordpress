@@ -141,3 +141,20 @@ table.topspin-orders-list {
 	table.topspin-orders-list .subtotal-column {
 		width:100px;
 	}
+
+ul.topspin-artists-list {
+}
+	ul.topspin-artists-list li.topspin-artist-item {
+		float:left;
+		width:150px;
+		text-align:center;
+		margin-right:10px;
+		margin-bottom:10px;
+	}
+		ul.topspin-artists-list li.topspin-artist-item .topspin-artist-item-thumb {
+			height:150px;
+		}
+		ul.topspin-artists-list li.topspin-artist-item .topspin-artist-item-footer {
+			height:36px;
+			line-height:18px;
+		}
