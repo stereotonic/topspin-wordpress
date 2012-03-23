@@ -1,7 +1,9 @@
 <?php
 
-include('../../../wp-load.php');
+$wpRoot = dirname(dirname(dirname(dirname(__FILE__))));
 
-topspin_cron_rebuild():
+include($wpRoot.'/wp-load.php');
+
+topspin_cron_rebuild();
 
 ?>
