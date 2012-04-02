@@ -17,10 +17,6 @@
 define('TOPSPIN_VERSION','3.4.0');
 define('TOPSPIN_PLUGIN_PATH',dirname(__FILE__));
 define('TOPSPIN_PLUGIN_URL',WP_PLUGIN_URL.'/'.basename(TOPSPIN_PLUGIN_PATH));
-define('TOPSPIN_CURRENT_THEME_PATH',get_theme_root().'/'.get_stylesheet());
-define('TOPSPIN_CURRENT_THEME_URL',dirname(get_stylesheet_uri()));
-define('TOPSPIN_CURRENT_THEMEPARENT_PATH',get_theme_root().'/'.get_template());
-define('TOPSPIN_CURRENT_THEMEPARENT_URL',get_template_directory());
 
 // Include Plugin Classes
 require_once(TOPSPIN_PLUGIN_PATH.'/classes/Topspin_Store.php');

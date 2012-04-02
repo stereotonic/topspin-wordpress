@@ -273,6 +273,7 @@ This plugin is in open development.  Over the weeks and months we hope to roll o
 * Updated cron procedure
 * Added the abiltiy to turn off WP-Cron
 * Migrated artist to a per-store setting.
+* Added currency support for (YEN, EUR, AUD)
 
 = 3.3.3.3 =
 * Fixed lightbox handler with auto-filled anchor tags - @ezmiller

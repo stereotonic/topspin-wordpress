@@ -210,6 +210,8 @@ class Topspin_Store {
 			curl_setopt($ch,CURLOPT_RETURNTRANSFER,true);
 			curl_setopt($ch,CURLOPT_USERPWD,$this->settings_get('topspin_api_username').':'.$this->settings_get('topspin_api_key'));
 			curl_setopt($ch,CURLOPT_HTTPAUTH,CURLAUTH_ANY);
+			curl_setopt($ch,CURLOPT_FRESH_CONNECT,1);
+			curl_setopt($ch,CURLOPT_FORBID_REUSE,1);
 			if($post) {
 				curl_setopt($ch,CURLOPT_POST,true);
 				curl_setopt($ch,CURLOPT_POSTFIELDS,$post_args);
@@ -331,7 +333,6 @@ class Topspin_Store {
 		 *		@opts (array)					An array of options
 		 *
 		 *			@artist_id (int)			The artist ID
-		 *			@updated_after (string)		date('Ymd')
 		 */
 		$url = 'http://app.topspin.net/api/v1/offers';
 		$data = json_decode($this->process($url,$opts,false));
@@ -368,8 +369,8 @@ class Topspin_Store {
 			'page' => 1
 		);
 		$opts = array_merge($defaults,$opts);
-		$data = json_decode($this->process($url,$opts,false));		
-		if($data) { return $data->offers; }
+		$data = json_decode($this->process($url,$opts,false));
+		if($data && isset($data->offers)) { return $data->offers; }
 	}
 	public function getOrders($page=1) {
 		##	Retrieves the orders from the Order API
@@ -525,7 +526,7 @@ EOD;
 				$addedIDs = array();
 				if($totalPages) {
 					for($i=1;$i<=$totalPages;$i++) {
-						$items = $this->getItems($requestOptions);
+						$items = $this->getItems(array_merge($requestOptions,array('page'=>$i)));
 						if($items && count($items)) {
 							foreach($items as $item) {
 								$campaign_id = '';
