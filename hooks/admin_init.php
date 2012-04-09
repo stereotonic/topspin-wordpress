@@ -18,23 +18,23 @@ function topspin_admin_init() {
 				case "topspin_general_settings":
 					unset($_POST['action']);
 					## Empty all stores and store settings if different artist ID is set
-					if($_POST['topspin_artist_id']!=$store->settings_get('topspin_artist_id')) {
-						$stores = $store->stores_get_list();
-						if(count($stores)) {
-							foreach($stores as $_store) {
+					$stores = $store->stores_get_list();
+					if(count($stores)) {
+						foreach($stores as $_store) {
+							$deleteFlag = !(in_array($_store->artist_id,$_POST['topspin_artist_id']));
+							if($deleteFlag) {
 								$store->deleteStore($_store->store_id,1);
 								wp_delete_post($_store->ID,1);	//deletes the page from the posts table
 							}
 						}
 					}
-	
 					## Set Each Option
 					foreach($_POST as $key=>$value) {
 						$store->settings_set($key,$value); //Update all posted settings on this page.
 						update_option($key,$value); //Update WordPress options table (v2.0)
 					}
 					//$store->rebuildAll();
-	
+
 					##	If Artists is Unset (New)
 					if(!isset($_POST['topspin_artist_id'])) {
 						$artistsList = $store->artists_get_list();

@@ -413,7 +413,7 @@ switch($action) {
                                 <?php if(count($sortedItems)) : ?>
                                     <?php foreach($sortedItems as $item) : ?>
                                     <?php $item['is_public'] = (isset($item['is_public']) && strlen($storeData['items_order'])) ? $item['is_public'] : 1; ?>
-                                    <li id="item-<?php echo $item['id'];?>:<?php echo ($item['is_public'])?$item['is_public']:0;?>">
+                                    <li id="item-<?php echo $item['id'];?>:<?php echo $item['is_public']; ?>">
                                     	<div class="item-offer-type"><?php echo $item['offer_type_name'];?></div>
                                         <div class="item-canvas <?php echo ($item['is_public'])?'':'faded';?>">
                                             <img src="<?php echo $item['default_image'];?>" width="150" alt="<?php echo $item['name'];?>" /><br/>
@@ -441,10 +441,10 @@ switch($action) {
 
 		var updateItemsOrder = function() {
 			var aOrder = new Array();
-			var containers = jQuery('ul.item-sortable > li');
+			var containers = jQuery('ul#topspin-manual-item-sorting > li');
 			if(containers.length) {
 				containers.each(function(idx,el) {
-					if(jQuery(el).hasClass('preview-item')) {
+					if(!jQuery(el).hasClass('preview-item')) {
 						var itemID = jQuery(this).attr('id');
 						itemID = itemID.split('-');
 						aOrder.push(itemID[1]);
@@ -499,6 +499,7 @@ switch($action) {
 				url : ajaxurl,
 				data : {
 					action : 'topspin_get_items',
+					artist_id : jQuery('#tospin_artist_id'),
 					offer_types : offer_types,
 					tags : tags
 				},
@@ -559,15 +560,19 @@ switch($action) {
 				jQuery.each(json,function(itemKey,itemData) {
 					switch(sortBy) {
 						case 'tag':
-							if(itemData.tag_name.toLowerCase()==sortName.toLowerCase()) {
-								addedIDs.push(itemData.id);
-								sortedJson.push(itemData);
+							if(itemData.tag_name) {
+								if(itemData.tag_name.toLowerCase()==sortName.toLowerCase()) {
+									addedIDs.push(itemData.id);
+									sortedJson.push(itemData);
+								}
 							}
 							break;
 						case 'offertype':
-							if(itemData.offer_type.toLowerCase()==sortName.toLowerCase()) {
-								addedIDs.push(itemData.id);
-								sortedJson.push(itemData);
+							if(itemData.offer_type) {
+								if(itemData.offer_type.toLowerCase()==sortName.toLowerCase()) {
+									addedIDs.push(itemData.id);
+									sortedJson.push(itemData);
+								}
 							}
 							break;
 					}
@@ -641,7 +646,7 @@ switch($action) {
 			//	Manual Item Sorting
 			var selected = jQuery('select#topspin_default_sorting option:selected');
 			var order = selected.val();
-			
+
 			// End Disable AJAX Controls
 			var offer_types = getCheckedOfferTypes();
 			var tags = getCheckedTags();
@@ -651,6 +656,7 @@ switch($action) {
 					action : 'topspin_get_items',
 					artist_id : jQuery('#topspin_artist_id').val(),
 					store_id : <?php echo $storeData['id']; ?>,
+					sort_by : jQuery('#topspin_default_sorting_by').val(),
 					offer_types : offer_types,
 					tags : tags,
 					order : order
@@ -679,6 +685,8 @@ switch($action) {
 					manualItems.empty();
 
 					jQuery(json).each(function(key,data) {
+						var isPublic = ((data.is_public)?data.is_public:1);
+
 						//Featured Items Append
 						featuredItems.each(function(fidx,fel) {
 							var option = jQuery('<option />');
@@ -692,7 +700,7 @@ switch($action) {
 						//Manual Items Append
 						var li = jQuery('<li />');
 						li
-							.attr('id','item-'+data.id+':1');
+							.attr('id','item-'+data.id+':'+isPublic);
 						var offertype = jQuery('<div />');
 						offertype
 							.addClass('item-offer-type')
@@ -717,10 +725,12 @@ switch($action) {
 							.addClass('item-name')
 							.html(data.name)
 							.appendTo(li);
+						//Fade title if not public
+						if(isPublic==0) { name.addClass('faded'); }
 						var hide = jQuery('<div />')
 						hide
 							.addClass('item-hide')
-							.html('Hide')
+							.html((isPublic==0)?'Show':'Hide')
 							.appendTo(li);
 						li.appendTo(manualItems);
 					});
@@ -736,7 +746,7 @@ switch($action) {
 		};
 		
 		var toggleManualSorting = function() {
-			if(jQuery('option:selected',this).val()=='manual') {
+			if(jQuery('#topspin_default_sorting_by').val()=='manual') {
 				jQuery('#topspin_manual_sorting').fadeIn();
 				jQuery('#topspin-preview-sorting').fadeOut();
 			}
@@ -793,11 +803,8 @@ switch($action) {
 				else { updateItemDisplay(); }
 			});
 			$('select#topspin_default_sorting_by').bind('change',function(e) {
-				var selected = $('option:selected',this);
-				switch(selected.val()) {
-					case 'manual':
-						toggleManualSorting.call(this);
-						break;
+				toggleManualSorting.call(this);
+				switch($(this).val()) {
 					case 'offertype':
 					case 'tags':
 						updateItemDisplay();
@@ -818,10 +825,12 @@ switch($action) {
 
 					var offer_types = getCheckedOfferTypes();
 					var tags = getCheckedTags();
+
 					jQuery.ajax({
 						url : ajaxurl,
 						data : {
 							action : 'topspin_get_items',
+							artist_id : jQuery('#tospin_artist_id').val(),
 							offer_types : offer_types,
 							tags : tags
 						},
@@ -872,9 +881,9 @@ switch($action) {
 			updateItemsOrder();
 			
 			<?php if($storeData['id'] && $storeData['default_sorting_by']=='manual') : ?>
-				$('#topspin_manual_sorting').fadeIn();
+				jQuery('#topspin_manual_sorting').fadeIn();
 			<?php else : ?>
-			$('select#topspin_default_sorting_by').change();
+			jQuery('select#topspin_default_sorting_by').change();
 			<?php endif; ?>
 
 		});

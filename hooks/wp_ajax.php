@@ -23,9 +23,26 @@ function topspin_ajax_get_items() {
 	$offer_types = explode(',',$_GET['offer_types']);
 	$tags = explode(',',$_GET['tags']);
 	$order = (isset($_GET['order']) && strlen($_GET['order'])) ? $_GET['order'] : null;
+	$sort_by = (isset($_GET['sort_by']) && strlen($_GET['sort_by'])) ? $_GET['sort_by'] : 'manual';
 	$theStore = $store->getStore($store_id);
-	$artist_id = ($theStore) ? $theStore['artist_id'] : null;
-	$itemsList = $store->items_get_filtered_list($offer_types,$tags,$artist_id,$order);
+	$artist_id = ($artist_id) ? $artist_id : (($theStore) ? $theStore['artist_id'] : null);
+	if($theStore && $sort_by=='manual') {
+		$itemsList = $store->stores_get_items($store_id);
+	}
+	else {
+		$itemsList = $store->items_get_filtered_list($offer_types,$tags,$artist_id,$order);
+		if(count($itemsList)) {
+			$itemsOrder = explode(',',$theStore['items_order']);
+			$itemsOrderArr = array();
+			foreach($itemsOrder as $item) {
+				$itemArr = explode(':',$item);
+				$itemsOrderArr[$itemArr[0]] = $itemArr[1];
+			}
+			foreach($itemsList as $key=>$item) {
+				$itemsList[$key]['is_public'] = $itemsOrderArr[$item['id']];
+			}
+		}
+	}
 	echo json_encode($itemsList);
 	die();
 }

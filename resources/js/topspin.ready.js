@@ -15,6 +15,7 @@ jQuery(function($) {
 		if($(href).length) {
 			$.colorbox({
 				inline : true,
+				innerWidth : '884px',
 				href : href
 			});
 		}

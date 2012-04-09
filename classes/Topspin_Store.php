@@ -413,8 +413,8 @@ class Topspin_Store {
 		##	Rebuilds the items, and artists database tables
 		$apiStatus = $this->api_check();
 		if(!$apiStatus->error_detail) {
-			$timestamp = $this->rebuildItems();
 			$this->rebuildArtists();
+			$timestamp = $this->rebuildItems();
 			$this->rebuildOrders();
 			$this->settings_set('topspin_last_cache_all',$timestamp);
 		}
