@@ -24,7 +24,6 @@ function topspin_admin_init() {
 							$deleteFlag = !(in_array($_store->artist_id,$_POST['topspin_artist_id']));
 							if($deleteFlag) {
 								$store->deleteStore($_store->store_id,1);
-								wp_delete_post($_store->ID,1);	//deletes the page from the posts table
 							}
 						}
 					}

@@ -1,11 +1,13 @@
 <?php
 
 /*
- *	Last Modified:		March 27, 2012
+ *	Last Modified:		April 9, 2012
  *
  *	----------------------------------
  *	Change Log
  *	----------------------------------
+ *	2012-04-09
+ 		- Added default page template option
  *	2012-03-21
  		- Split settings into subgroups
  		- Migrated artist to be selected by Store
@@ -121,6 +123,24 @@ if($apiStatus) { $apiError = $apiStatus->error_detail; }
 	<h3>Template Settings</h3>
 	<table class="form-table">
 		<tbody>
+			<tr valign="top">
+				<th scope="row"><label for="topspin_default_page_template">Page Template:</label></th>
+				<td>
+            		<?php
+            		$templates = get_page_templates();
+            		$pageTemplate = $store->settings_get('topspin_default_page_template');
+            		?>
+            		<select id="topspin_default_page_template" name="topspin_default_page_template">
+            			<option value="">Page Template</option>
+            			<?php if(count($templates)) : ?>
+            			<?php foreach($templates as $templateName=>$templateFile) : ?>
+            			<option value="<?php echo $templateFile; ?>" <?php echo ($pageTemplate==$templateFile) ? 'selected="selected"' : ''; ?>><?php echo $templateName; ?></option>
+            			<?php endforeach; ?>
+            			<?php endif; ?>
+            		</select>
+            		<span class="description">For advanced users, specify the default template file for all new stores. <a href="http://codex.wordpress.org/Pages#Page_Templates" target="_blank">Custom Page Templates</a></span>
+				</td>
+			</tr>
             <tr valign="top">
                 <th scope="row"><label for="topspin_api_key">Template:</label></th>
                 <td>

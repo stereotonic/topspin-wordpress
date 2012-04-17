@@ -2,11 +2,14 @@
 
 /*
  *
- *	Last Modified:			March 27, 2011
+ *	Last Modified:			April 9, 2011
  *
  *	--------------------------------------
  *	Change Log
  *	--------------------------------------
+ *	2012-04-09
+ 		- JS Bug fixes
+ 		- Updated default store page template
  *	2012-03-21
  		- Added artist-based stores
  *	2012-01-24
@@ -80,9 +83,8 @@ if(isset($_GET['id'])) {
 
 switch($action) {
 	case "delete":
-		$res = $store->deleteStore($storeData['id']);
+		$res = $store->deleteStore($storeData['id'],1);
 		if($res) {
-			wp_delete_post($storeData['post_id'],0);
 			$success = 'Store has been deleted. <a href="'.get_home_url().'/wp-admin/admin.php?page=topspin/page/settings_viewstores">View Stores</a>';
 		}
 		?>
@@ -257,7 +259,7 @@ switch($action) {
                     	<td>
                     		<?php
                     		$templates = get_page_templates();
-                    		$pageTemplate = (isset($storeData['post_id'])) ? get_post_meta($storeData['post_id'],'_wp_page_template',1) : '';
+                    		$pageTemplate = (isset($storeData['post_id'])) ? get_post_meta($storeData['post_id'],'_wp_page_template',1) :$store->settings_get('topspin_default_page_template');
                     		?>
                     		<select id="topspin_page_template" name="page_template">
                     			<option value="">Default Template</option>

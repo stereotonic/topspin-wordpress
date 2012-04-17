@@ -79,7 +79,7 @@
 	</ul>
 
 	<?php ## BEGIN PAGINATION
-	if(!$storedata['show_all_items'] && $storedata['curr_page']<=$storedata['total_pages']) { ?>
+	if(!$storedata['show_all_items'] && $storedata['curr_page']<=$storedata['total_pages'] && $storedata['total_pages']>1) { ?>
     	<div class="topspin-pagination">
     	Page <?php echo $storedata['curr_page'];?> of <?php echo $storedata['total_pages'];?>
 		<?php if($storedata['prev_page']) : ?><a class="topspin-prev" href="<?php echo $storedata['prev_page'];?>">Previous</a><?php endif; ?>
