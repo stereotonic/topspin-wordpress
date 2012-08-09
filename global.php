@@ -27,6 +27,7 @@ require_once(TOPSPIN_PLUGIN_PATH.'/includes/cron.php');
 require_once(TOPSPIN_PLUGIN_PATH.'/includes/db.php');
 require_once(TOPSPIN_PLUGIN_PATH.'/includes/page.php');
 require_once(TOPSPIN_PLUGIN_PATH.'/includes/shortcodes.php');
+require_once(TOPSPIN_PLUGIN_PATH.'/includes/template.php');
 require_once(TOPSPIN_PLUGIN_PATH.'/includes/template-tags.php');
 require_once(TOPSPIN_PLUGIN_PATH.'/includes/upgrade.php');
 
@@ -37,6 +38,7 @@ require_once(TOPSPIN_PLUGIN_PATH.'/hooks/after_setup_theme.php');
 require_once(TOPSPIN_PLUGIN_PATH.'/hooks/cron_schedules.php');
 require_once(TOPSPIN_PLUGIN_PATH.'/hooks/init.php');
 require_once(TOPSPIN_PLUGIN_PATH.'/hooks/plugins_loaded.php');
+require_once(TOPSPIN_PLUGIN_PATH.'/hooks/wp_head.php');
 require_once(TOPSPIN_PLUGIN_PATH.'/hooks/wp_ajax.php');
 require_once(TOPSPIN_PLUGIN_PATH.'/hooks/custom/topspin_cron_fetch_items.php');
 

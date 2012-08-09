@@ -1,9 +1,14 @@
 /*
- *	Last Modified:		February 6, 2011
+ *	Last Modified:		May 23, 2012
  *
  *	----------------------------------
  *	Change Log
  *	----------------------------------
+ *	2012-08-09
+ 		- Added window.wpTopspinPluginDisableHashPermalink (set to true to disable the hash permalink from running)
+ *	2012-05-23
+ 		- Updated viewProduct to load from a lightbox
+ 		- Added a callback for view product lightbox called "window.wpTopspinPluginOnViewProduct"
  *	2012-02-06
  		- Updated topspin item links to work with or without wp site url [@ezmiller - https://github.com/topspin/topspin-wordpress/issues/32]
  */
@@ -11,24 +16,32 @@
 jQuery(function($) {
 
 	var viewProduct = function(productID) {
-		var href = '#topspin-view-more-' + productID;
-		if($(href).length) {
+		var data = {
+			action : 'topspin_get_lightbox',
+			item_id : productID
+		};
+		$.get(ajaxurl,data,function(ret) {
 			$.colorbox({
-				inline : true,
 				innerWidth : '884px',
-				href : href
+				html : ret,
+				onComplete : function() {
+					TSPF.BuyButtons.initializeBuyButtons();
+					if(typeof window.wpTopspinPluginOnViewProduct=='function') { window.wpTopspinPluginOnViewProduct.call(); }
+				}
 			});
-		}
+		});
 	};
 
 	var getPid = function(href) {
 		return href.replace(/(^[\w\d\.\/\:_-]*)?(\/)?#!\//,'');
 	};
 
-	if(window.location.hash) {
-		if(window.location.hash.indexOf('#!/')!=-1) {
-			var pid = getPid(window.location.hash);
-			if(pid) { viewProduct(pid); }
+	if(!window.wpTopspinPluginDisableHashPermalink) {
+		if(window.location.hash) {
+			if(window.location.hash.indexOf('#!/')!=-1) {
+				var pid = getPid(window.location.hash);
+				if(pid) { viewProduct(pid); }
+			}
 		}
 	}
 

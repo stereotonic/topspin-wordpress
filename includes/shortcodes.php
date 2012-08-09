@@ -76,7 +76,8 @@ function topspin_shortcode_buy_buttons($atts) {
 	$storedata = $store->getStore($storeID);
 	$storedata['grid_item_width'] = ($storedata['grid_columns']) ? floor(100/$storedata['grid_columns']) : 100;
 	## Set Page
-	$page = (isset($_GET['page'])) ? $_GET['page'] : 1;
+	//$page = (isset($_GET['page'])) ? $_GET['page'] : 1;
+	$page = (get_query_var('paged')) ? get_query_var('paged') : 1;
 	## Get Items
 	$allitems = $store->getStoreItems($storeID,0);
 	## Get Paged Items
@@ -93,8 +94,10 @@ function topspin_shortcode_buy_buttons($atts) {
 		$storedata['total_items'] = count($allitems);
 		$storedata['total_pages'] = ($storedata['items_per_page']) ? ceil($storedata['total_items']/$storedata['items_per_page']) : 1;
 		$storedata['curr_page'] = $page;
-		$storedata['prev_page'] = ($page==1) ? '' : get_permalink($post->ID).$queryAppendSign.'page='.($page-1);
-		$storedata['next_page'] = ($storedata['curr_page']<$storedata['total_pages']) ? get_permalink($post->ID).$queryAppendSign.'page='.($page+1) : '';
+		$storedata['prev_page'] = ($page==1) ? '' : get_permalink($post->ID).'page/'.($page-1);
+		$storedata['next_page'] = ($storedata['curr_page']<$storedata['total_pages']) ? get_permalink($post->ID).'page/'.($page+1) : '';
+		//$storedata['prev_page'] = ($page==1) ? '' : get_permalink($post->ID).$queryAppendSign.'page='.($page-1);
+		//$storedata['next_page'] = ($storedata['curr_page']<$storedata['total_pages']) ? get_permalink($post->ID).$queryAppendSign.'page='.($page+1) : '';
 	}
 	ob_start();
 	##	Template File

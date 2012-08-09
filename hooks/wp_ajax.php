@@ -2,11 +2,13 @@
 
 /*
  *
- *	Last Modified:			March 22, 2012
+ *	Last Modified:			May 23, 2012
  *
  *	--------------------------------------
  *	Change Log
  *	--------------------------------------
+ *	2012-05-23
+ 		- Added item lightbox action
  *	2012-03-22
  		- Moved topspin_ajax.php to hooks/wp_ajax.php
  		- Added "topspin_refresh_tags" action
@@ -15,7 +17,11 @@
  */
 
 add_action('wp_ajax_topspin_get_items','topspin_ajax_get_items');
+add_action('wp_ajax_nopriv_topspin_get_items','topspin_ajax_get_items');
 add_action('wp_ajax_topspin_refresh_tags','topspin_ajax_refresh_tags');
+add_action('wp_ajax_nopriv_topspin_refresh_tags','topspin_ajax_refresh_tags');
+add_action('wp_ajax_topspin_get_lightbox','topspin_ajax_get_lightbox');
+add_action('wp_ajax_nopriv_topspin_get_lightbox','topspin_ajax_get_lightbox');
 
 function topspin_ajax_get_items() {
 	global $store;
@@ -62,6 +68,17 @@ function topspin_ajax_refresh_tags() {
 		)
 	);
 	echo json_encode($ret);
+	die();
+}
+
+function topspin_ajax_get_lightbox() {
+	global $store;
+	$item_id = (isset($_GET['item_id'])) ? $_GET['item_id'] : 0;
+	if($item_id) {
+		$item = topspin_get_item($item_id);
+		$lightboxFile = topspin_get_template_file('item-lightbox.php');
+		echo topspin_get_template_output($lightboxFile,$item);
+	}
 	die();
 }
 

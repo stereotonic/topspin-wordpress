@@ -274,6 +274,8 @@ This plugin is in open development.  Over the weeks and months we hope to roll o
 * Added the abiltiy to turn off WP-Cron
 * Migrated artist to a per-store setting.
 * Added currency support for (YEN, EUR, AUD)
+* Moved lightbox to be loaded within AJAX
+* Added a JS callback to viewProduct called "window.wpTopspinPluginOnViewProduct"
 
 = 3.3.3.3 =
 * Fixed lightbox handler with auto-filled anchor tags - @ezmiller

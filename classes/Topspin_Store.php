@@ -412,7 +412,7 @@ class Topspin_Store {
 	public function rebuildAll() {
 		##	Rebuilds the items, and artists database tables
 		$apiStatus = $this->api_check();
-		if(!$apiStatus->error_detail) {
+		if(is_object($apiStatus) && !$apiStatus->error_detail) {
 			$this->rebuildArtists();
 			$timestamp = $this->rebuildItems();
 			$this->rebuildOrders();
@@ -696,7 +696,8 @@ EOD;
 		 *	RETURN
 		 *		The value of the selected setting on success
 		 */
-		return maybe_unserialize($this->_settings[$name]);
+		$value = (isset($this->_settings[$name])) ? $this->_settings[$name] : '';
+		return maybe_unserialize($value);
 	}
 	public function settings_exists($name) {
 		##	Checks if a specified setting exists
@@ -1020,7 +1021,8 @@ EOD;
 			AND artist_id IN (%s)
 EOD;
 		$aIds = $this->settings_get('topspin_artist_id');
-		$artistIds = implode(',',$aIds);
+		if(is_string($aIds)) { $artistIds = array($aIds); }
+		else { $artistIds = implode(',',$aIds); }
 		$newTags = $this->wpdb->get_results($this->wpdb->prepare($updatedSql,array($store_id,$artistIds)),ARRAY_A);
 		foreach($newTags as $tag) {
 			$tagArr = array(
@@ -1799,6 +1801,7 @@ EOD;
 EOD;
 		$item = $this->wpdb->get_row($sql,ARRAY_A);
 		//Get default images
+		$item['images'] = $this->getItemImages($item['id']);
 		$item['default_image'] = (strlen($item['poster_image_source'])) ? $this->getItemDefaultImage($item['id'],$item['poster_image_source']) : $item['poster_image'];
 		$item['default_image_large'] = (strlen($item['poster_image_source'])) ? $this->getItemDefaultImage($item['id'],$item['poster_image_source'],'large') : $item['poster_image'];
 		return $item;
