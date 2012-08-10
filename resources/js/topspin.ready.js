@@ -25,7 +25,7 @@ jQuery(function($) {
 				innerWidth : '884px',
 				html : ret,
 				onComplete : function() {
-					TSPF.BuyButtons.initializeBuyButtons();
+					TSPF.BuyButton.initializeBuyButtons();
 					if(typeof window.wpTopspinPluginOnViewProduct=='function') { window.wpTopspinPluginOnViewProduct.call(); }
 				}
 			});
