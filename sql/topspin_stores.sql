@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS `<?php echo $wpdb->prefix;?>topspin_stores` (
   `items_order` longtext NOT NULL,
   `featured_item` int(11) NOT NULL,
   `page_template` varchar(255) NOT NULL,
-  `internal_name` varchar(255) NOT NULL,
+  `internal_name` varchar(255) NOT NULL,,
+  `sale_tag` varchar(255) NOT NULL,
   PRIMARY KEY  (`store_id`),
   KEY `artist_id` (`artist_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;

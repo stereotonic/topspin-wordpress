@@ -2,11 +2,15 @@
 
 /*
  *
- *	Last Modified:			April 9, 2011
+ *	Last Modified:			August 9, 2012
  *
  *	--------------------------------------
  *	Change Log
  *	--------------------------------------
+ *	2012-08-10
+ 		- Added Sale Tag dropdown
+ *  2012-08-09
+ 		- Added Description Length
  *	2012-04-09
  		- JS Bug fixes
  		- Updated default store page template
@@ -50,6 +54,9 @@ $action = (isset($_GET['action'])) ? $_GET['action'] : 'edit';
 $error = $store->getError();
 $success = '';
 
+$artistsIDs = $store->settings_get('topspin_artist_id');
+$artistsList = $store->artists_get_list(array('artist_ids'=>$artistsIDs));
+
 ### Set Default Value
 $storeData = array(
 	'id' => 0,
@@ -64,6 +71,8 @@ $storeData = array(
 	'items_order' => '',
 	'internal_name' => '',
 	'featured_item' => array(),
+	'desc_length' => 0,
+	'sale_tag' => '',
 	'offer_types' => $store->getOfferTypes(),
 	'tags' => array()
 );
@@ -163,10 +172,6 @@ switch($action) {
 					<tr valign="top">
 						<th scope="row"><label for="topspin_artist_id">Artist</label></th>
 						<td>
-							<?php
-							$artistsIDs = $store->settings_get('topspin_artist_id');
-							$artistsList = $store->artists_get_list(array('artist_ids'=>$artistsIDs));
-							?>
 							<select id="topspin_artist_id" name="artist_id">
 								<?php foreach($artistsList as $artist) : ?>
 									<?php $artistSelected = ($artist['id']==$storeData['artist_id']) ? 'selected="selected"' : ''; ?>
@@ -203,6 +208,28 @@ switch($action) {
 							<input id="topspin_items_per_page" class="regular-text" type="text" value="<?php echo $storeData['items_per_page'];?>" name="items_per_page" /><br/>
 							<input id="topspin_show_all_items" name="show_all_items" type="checkbox" value="1" <?php echo ($storeData['show_all_items'])?'checked="checked"':'';?> /> <label for="topspin_show_all_items">Show all items on one page</label>
 							<span class="description"></span>
+						</td>
+					</tr>
+					<tr valign="top">
+						<th scope="row"><label for="topspin_desc_length">Description Length</label></th>
+						<td>
+							<input id="topspin_desc_length" class="regular-text" type="text" value="<?php echo $storeData['desc_length'];?>" name="desc_length" /><br/>
+							<span class="description"></span>
+						</td>
+					</tr>
+					<tr valign="top">
+						<th scope="row"><label for="topspin_sale_tag">Sale Tag</label></th>
+						<td>
+							<?php
+							$tagsList = $store->tags_get_list($artistsList[0]);
+							if(count($tagsList)) : ?>
+							<select id="topspin_sale_tag" name="sale_tag">
+								<?php foreach($tagsList as $tag) : ?>
+									<option value="<?php echo $tag['name']; ?>" <?php echo ($tag['name']==$storeData['sale_tag']) ? 'selected="selected"' : ''; ?>><?php echo $tag['name']; ?></option>
+								<?php endforeach; ?>
+							</select>
+							<span class="description"></span>
+							<?php endif; ?>
 						</td>
 					</tr>
 					<tr valign="top">

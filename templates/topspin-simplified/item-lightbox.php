@@ -19,7 +19,11 @@
 	</ul>
 	<?php endif; ?>
 	<div class="topspin-view-more-buy">
-		<a class="topspin-buy" href="<?php echo $item['offer_url'];?>">Buy</a>
+		<?php if($item['in_stock_quantity']>0 || $item['product_type']=='digital_package') : ?>
+			<a class="topspin-buy" href="<?php echo $item['offer_url'];?>">Buy</a>
+		<?php else : ?>
+			<span class="topspin-soldout">SOLD OUT</span>
+		<?php endif; ?>
 		<div class="topspin-view-more-price">Price: <?php echo $item['symbol'];?><?php echo $item['price'];?></div>
 	</div>
 	<div class="topspin-clear"></div>

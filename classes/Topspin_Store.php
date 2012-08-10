@@ -396,6 +396,17 @@ class Topspin_Store {
 		$artist = $this->getArtist();
 		if($artist) { return $artist->spin_tags; }
 	}
+	public function getSKUs($campaign_id) {
+		/*
+			Retrieves all SKUs for the campaign_ID
+		 */
+		$url = 'https://app.topspin.net/api/v1/sku';
+		$post_args = array(
+			'campaign_id' => $campaign_id
+		);
+		$data = json_decode($this->process($url,$post_args));
+		return $data;
+	}
 	/* !----- REBUILD CACHE METHODS ----- */
 
 	public function cache_image($item_ID,$key,$size,$url) {
@@ -412,7 +423,7 @@ class Topspin_Store {
 	public function rebuildAll() {
 		##	Rebuilds the items, and artists database tables
 		$apiStatus = $this->api_check();
-		if(is_object($apiStatus) && !$apiStatus->error_detail) {
+		if(!$apiStatus || ($apiStatus && is_object($apiStatus) && !$apiStatus->error_detail)) {
 			$this->rebuildArtists();
 			$timestamp = $this->rebuildItems();
 			$this->rebuildOrders();
@@ -536,6 +547,15 @@ EOD;
 									parse_str($parts['query'],$query);
 									$campaign_id = $query['cId'];
 								}
+								//Retrieve inventory stock
+								$skuData = false;
+								$inStockQuantity = 0;
+								if($item->offer_type=='buy_button') {
+									$skuData = $this->getSKUs($campaign_id);
+									if($skuData->status=='ok') {
+										foreach($skuData->response->skus as $sku) { $inStockQuantity += $sku->in_stock_quantity; }
+									}
+								}
 								$data = array(
 									'id' => $item->id,
 									'campaign_id' => $campaign_id,
@@ -553,12 +573,15 @@ EOD;
 									'currency' => $item->currency,
 									'price' => $item->price,
 									'name' => $item->name,
-									'campaign' => serialize($item->campaign),
+									'campaign' => maybe_serialize($item->campaign),
 									'offer_url' => (isset($item->offer_url)) ? $item->offer_url : '',
 									'mobile_url' => (isset($item->mobile_url)) ? $item->mobile_url : '',
-									'last_modified' => date('Y-m-d H:i:s',$lastModified)
+									'last_modified' => date('Y-m-d H:i:s',$lastModified),
+									'created_date' => date('c'),
+									'sku_data' => ($skuData && $skuData->status=='ok') ? maybe_serialize($skuData->response->skus) : '',
+									'in_stock_quantity' => $inStockQuantity
 								);
-								$format = array('%d','%d','%d','%s','%s','%d','%d','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s');
+								$format = array('%d','%d','%d','%s','%s','%d','%d','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%d');
 			
 								## Get Keys
 								$tableFields = implode(',',array_keys($data));
@@ -566,6 +589,7 @@ EOD;
 								$onDuplicateKeyUpdate = '';
 								$keyIndex = 0;
 								foreach($data as $key=>$field) {
+									if($key=="created_date") { continue; } //skip created_date field for UPDATE
 									if($keyIndex>0) { $onDuplicateKeyUpdate .= ', '; }
 									$onDuplicateKeyUpdate .= $key.'=VALUES('.$key.')';
 									$keyIndex++;
@@ -754,6 +778,8 @@ EOD;
 			{$this->wpdb->prefix}topspin_stores.default_sorting_by,
 			{$this->wpdb->prefix}topspin_stores.items_order,
 			{$this->wpdb->prefix}topspin_stores.internal_name,
+			{$this->wpdb->prefix}topspin_stores.desc_length,
+			{$this->wpdb->prefix}topspin_stores.sale_tag,
 			{$this->wpdb->prefix}topspin_stores.featured_item
 		FROM {$this->wpdb->prefix}topspin_stores
 		LEFT JOIN
@@ -798,6 +824,8 @@ EOD;
 			{$this->wpdb->prefix}topspin_stores.default_sorting_by,
 			{$this->wpdb->prefix}topspin_stores.items_order,
 			{$this->wpdb->prefix}topspin_stores.internal_name,
+			{$this->wpdb->prefix}topspin_stores.desc_length,
+			{$this->wpdb->prefix}topspin_stores.sale_tag,
 			{$this->wpdb->prefix}topspin_stores.featured_item
 		FROM {$this->wpdb->prefix}topspin_stores
 		LEFT JOIN
@@ -877,7 +905,9 @@ EOD;
 			{$this->wpdb->prefix}topspin_stores.default_sorting,
 			{$this->wpdb->prefix}topspin_stores.default_sorting_by,
 			{$this->wpdb->prefix}topspin_stores.items_order,
-			{$this->wpdb->prefix}topspin_stores.internal_name
+			{$this->wpdb->prefix}topspin_stores.internal_name,
+			{$this->wpdb->prefix}topspin_stores.desc_length,
+			{$this->wpdb->prefix}topspin_stores.sale_tag
 		FROM {$this->wpdb->prefix}topspin_stores
 		LEFT JOIN
 			{$this->wpdb->prefix}posts ON {$this->wpdb->prefix}topspin_stores.post_id = {$this->wpdb->prefix}posts.ID
@@ -915,10 +945,12 @@ EOD;
 			'default_sorting' => $post['default_sorting'],
 			'default_sorting_by' => $post['default_sorting_by'],
 			'items_order' => $post['items_order'],
-			'internal_name' => $post['internal_name']
+			'internal_name' => $post['internal_name'],
+			'desc_length' => $post['desc_length'],
+			'sale_tag' => $post['sale_tag']
 		);
 		//Add to the store table
-		$this->wpdb->insert($this->wpdb->prefix.'topspin_stores',$data,array('%d','%d','%s','%d','%d','%d','%s','%s','%s','%s'));
+		$this->wpdb->insert($this->wpdb->prefix.'topspin_stores',$data,array('%d','%d','%s','%d','%d','%d','%s','%s','%s','%s','%d','%s'));
 		$store_id = $this->wpdb->insert_id;
 		## Add Featured images
 		$this->createStoreFeaturedItems($post['featured_item'],$store_id);
@@ -946,9 +978,11 @@ EOD;
 			'default_sorting' => $post['default_sorting'],
 			'default_sorting_by' => $post['default_sorting_by'],
 			'items_order' => $post['items_order'],
-			'internal_name' => $post['internal_name']
+			'internal_name' => $post['internal_name'],
+			'desc_length' => $post['desc_length'],
+			'sale_tag' => $post['sale_tag']
 		);
-		$this->wpdb->update($this->wpdb->prefix.'topspin_stores',$data,array('store_id'=>$store_id),array('%d','%d','%d','%d','%s','%s','%s','%s'),array('%d'));
+		$this->wpdb->update($this->wpdb->prefix.'topspin_stores',$data,array('store_id'=>$store_id),array('%d','%d','%d','%d','%s','%s','%s','%s','%d','%s'),array('%d'));
 		## Add Featured Items
 		$this->updateStoreFeaturedItems($post['featured_item'],$store_id);
 		## Add Offer Types
@@ -1022,7 +1056,8 @@ EOD;
 EOD;
 		$aIds = $this->settings_get('topspin_artist_id');
 		if(is_string($aIds)) { $artistIds = array($aIds); }
-		else { $artistIds = implode(',',$aIds); }
+		else { $artistIds = $aIds; }
+		$artistIds = implode(',',$artistIds);
 		$newTags = $this->wpdb->get_results($this->wpdb->prepare($updatedSql,array($store_id,$artistIds)),ARRAY_A);
 		foreach($newTags as $tag) {
 			$tagArr = array(
@@ -1173,31 +1208,34 @@ EOD;
 		$this->createStoreFeaturedItems($featured_item,$store_id);
 	}
 	public function updateStoreOfferTypes($offer_types,$store_id) {
-		##
-		##	PARAMETERS
-		##		@offer_types		The offer type array
-		##		@store_Id			The store ID
+		/*
+		 *	PARAMETERS
+		 *		@offer_types		The offer type array
+		 *		@store_Id			The store ID
+		 */
 		$sql = 'DELETE FROM '.$this->wpdb->prefix.'topspin_stores_offer_type WHERE store_id = %d';
-		$this->wpdb->query($this->wpdb->prepare($sql,array($store_id)));
+		$this->wpdb->query($this->wpdb->prepare($sql,$store_id));
 		$this->createStoreOfferTypes($offer_types,$store_id);
 	}
 	public function updateStoreTags($tags,$store_id) {
-		##
-		##	PARAMETERS
-		##		@tags				The tags array
-		##		@store_Id			The store ID
+		/*
+		 *	PARAMETERS
+		 *		@tags				The tags array
+		 *		@store_Id			The store ID
+		 */
 		$sql = 'DELETE FROM '.$this->wpdb->prefix.'topspin_stores_tag WHERE store_id = %d';
-		$this->wpdb->query($this->wpdb->prepare($sql,array($store_id)));
+		$this->wpdb->query($this->wpdb->prepare($sql,$store_id));
 		$this->createStoreTags($tags,$store_id);
 	}
 	public function getStoreId($post_id) {
-		##	Retrieves the Store ID by Post ID
-		##
-		##	PARAMETERS
-		##		@post_id
-		##
-		##	RETURN
-		##		The store ID
+		/*	Retrieves the Store ID by Post ID
+		 *
+		 *	PARAMETERS
+		 *		@post_id
+		 *
+		 *	RETURN
+		 *		The store ID
+		 */
 		$sql = <<<EOD
 		SELECT
 			{$this->wpdb->prefix}topspin_stores.store_id
@@ -1205,7 +1243,7 @@ EOD;
 		WHERE
 			{$this->wpdb->prefix}topspin_stores.post_id = %d
 EOD;
-		$data = $this->wpdb->get_var($this->wpdb->prepare($sql,array($post_id)));
+		$data = $this->wpdb->get_var($this->wpdb->prepare($sql,$post_id));
 		return $data;
 	}
 	public function stores_get_items($store_id,$show_hidden=true,$artist_id=null) {
@@ -1281,6 +1319,10 @@ EOD;
 							{$this->wpdb->prefix}topspin_items.campaign,
 							{$this->wpdb->prefix}topspin_items.offer_url,
 							{$this->wpdb->prefix}topspin_items.mobile_url,
+							{$this->wpdb->prefix}topspin_items.last_modified,
+							{$this->wpdb->prefix}topspin_items.created_date,
+							{$this->wpdb->prefix}topspin_items.sku_data,
+							{$this->wpdb->prefix}topspin_items.in_stock_quantity,
 							{$this->wpdb->prefix}topspin_items_tags.tag_name,
 							{$this->wpdb->prefix}topspin_currency.currency,
 							{$this->wpdb->prefix}topspin_currency.symbol
@@ -1330,6 +1372,10 @@ EOD;
 						{$this->wpdb->prefix}topspin_items.campaign,
 						{$this->wpdb->prefix}topspin_items.offer_url,
 						{$this->wpdb->prefix}topspin_items.mobile_url,
+						{$this->wpdb->prefix}topspin_items.last_modified,
+						{$this->wpdb->prefix}topspin_items.created_date,
+						{$this->wpdb->prefix}topspin_items.sku_data,
+						{$this->wpdb->prefix}topspin_items.in_stock_quantity,
 						{$this->wpdb->prefix}topspin_items_tags.tag_name,
 						{$this->wpdb->prefix}topspin_currency.currency,
 						{$this->wpdb->prefix}topspin_currency.symbol
@@ -1383,6 +1429,10 @@ EOD;
 								{$this->wpdb->prefix}topspin_items.campaign,
 								{$this->wpdb->prefix}topspin_items.offer_url,
 								{$this->wpdb->prefix}topspin_items.mobile_url,
+								{$this->wpdb->prefix}topspin_items.last_modified,
+								{$this->wpdb->prefix}topspin_items.created_date,
+								{$this->wpdb->prefix}topspin_items.sku_data,
+								{$this->wpdb->prefix}topspin_items.in_stock_quantity,
 								{$this->wpdb->prefix}topspin_items_tags.tag_name,
 								{$this->wpdb->prefix}topspin_currency.currency,
 								{$this->wpdb->prefix}topspin_currency.symbol
@@ -1433,7 +1483,11 @@ EOD;
 						{$this->wpdb->prefix}topspin_items.name,
 						{$this->wpdb->prefix}topspin_items.campaign,
 						{$this->wpdb->prefix}topspin_items.offer_url,
-						{$this->wpdb->prefix}topspin_items.mobile_url,
+						{$this->wpdb->prefix}topspin_items.mobile_url,						
+						{$this->wpdb->prefix}topspin_items.last_modified,
+						{$this->wpdb->prefix}topspin_items.created_date,
+						{$this->wpdb->prefix}topspin_items.sku_data,
+						{$this->wpdb->prefix}topspin_items.in_stock_quantity,
 						{$this->wpdb->prefix}topspin_items_tags.tag_name,
 						{$this->wpdb->prefix}topspin_currency.currency,
 						{$this->wpdb->prefix}topspin_currency.symbol
@@ -1481,7 +1535,11 @@ EOD;
 					{$this->wpdb->prefix}topspin_items.name,
 					{$this->wpdb->prefix}topspin_items.campaign,
 					{$this->wpdb->prefix}topspin_items.offer_url,
-					{$this->wpdb->prefix}topspin_items.mobile_url,
+					{$this->wpdb->prefix}topspin_items.mobile_url,					
+					{$this->wpdb->prefix}topspin_items.last_modified,
+					{$this->wpdb->prefix}topspin_items.created_date,
+					{$this->wpdb->prefix}topspin_items.sku_data,
+					{$this->wpdb->prefix}topspin_items.in_stock_quantity,
 					{$this->wpdb->prefix}topspin_items_tags.tag_name,
 					{$this->wpdb->prefix}topspin_currency.currency,
 					{$this->wpdb->prefix}topspin_currency.symbol
@@ -1586,7 +1644,11 @@ EOD;
 			{$this->wpdb->prefix}topspin_items.name,
 			{$this->wpdb->prefix}topspin_items.campaign,
 			{$this->wpdb->prefix}topspin_items.offer_url,
-			{$this->wpdb->prefix}topspin_items.mobile_url,
+			{$this->wpdb->prefix}topspin_items.mobile_url,			
+			{$this->wpdb->prefix}topspin_items.last_modified,
+			{$this->wpdb->prefix}topspin_items.created_date,
+			{$this->wpdb->prefix}topspin_items.sku_data,
+			{$this->wpdb->prefix}topspin_items.in_stock_quantity,
 			{$this->wpdb->prefix}topspin_items_tags.tag_name,
 			{$this->wpdb->prefix}topspin_currency.currency,
 			{$this->wpdb->prefix}topspin_currency.symbol
@@ -1674,7 +1736,11 @@ EOD;
 			{$this->wpdb->prefix}topspin_items.name,
 			{$this->wpdb->prefix}topspin_items.campaign,
 			{$this->wpdb->prefix}topspin_items.offer_url,
-			{$this->wpdb->prefix}topspin_items.mobile_url,
+			{$this->wpdb->prefix}topspin_items.mobile_url,			
+			{$this->wpdb->prefix}topspin_items.last_modified,
+			{$this->wpdb->prefix}topspin_items.created_date,
+			{$this->wpdb->prefix}topspin_items.sku_data,
+			{$this->wpdb->prefix}topspin_items.in_stock_quantity,
 			{$this->wpdb->prefix}topspin_items_tags.tag_name,
 			{$this->wpdb->prefix}topspin_currency.currency,
 			{$this->wpdb->prefix}topspin_currency.symbol
@@ -1730,7 +1796,11 @@ EOD;
 			{$this->wpdb->prefix}topspin_items.name,
 			{$this->wpdb->prefix}topspin_items.campaign,
 			{$this->wpdb->prefix}topspin_items.offer_url,
-			{$this->wpdb->prefix}topspin_items.mobile_url,
+			{$this->wpdb->prefix}topspin_items.mobile_url,			
+			{$this->wpdb->prefix}topspin_items.last_modified,
+			{$this->wpdb->prefix}topspin_items.created_date,
+			{$this->wpdb->prefix}topspin_items.sku_data,
+			{$this->wpdb->prefix}topspin_items.in_stock_quantity,
 			GROUP_CONCAT(DISTINCT {$this->wpdb->prefix}topspin_items_tags.tag_name SEPARATOR ',') AS `tags`,
 			{$this->wpdb->prefix}topspin_currency.currency,
 			{$this->wpdb->prefix}topspin_currency.symbol
@@ -1756,14 +1826,28 @@ EOD;
 		}
 		return $items;
 	}
+	public function items_get_campaign_ids() {
+		/*
+			RETURN
+				An array of all skus in the database or FALSE on failure
+		 */
+		$sql = <<<EOD
+		SELECT
+			{$this->wpdb->prefix}topspin_items.campaign_id
+		FROM {$this->wpdb->prefix}topspin_items
+		WHERE campaign_id > 0
+EOD;
+		$campaignIds = $this->wpdb->get_col($sql);
+		return (is_array($campaignIds)) ? $campaignIds : false;
+	}
 	public function items_get($item_id) {
 		/*	Retrieves the specified item
-		 *
-		 *	PARAMETERS
-		 *		@item_id			The item ID
-		 *
-		 *	RETURN
-		 *		The item's array
+		 
+		 	PARAMETERS
+		 		@item_id			The item ID
+		 
+		 	RETURN
+		 		The item's array
 		 */
 		$sql = <<<EOD
 		SELECT
@@ -1785,6 +1869,10 @@ EOD;
 			{$this->wpdb->prefix}topspin_items.campaign,
 			{$this->wpdb->prefix}topspin_items.offer_url,
 			{$this->wpdb->prefix}topspin_items.mobile_url,
+			{$this->wpdb->prefix}topspin_items.last_modified,
+			{$this->wpdb->prefix}topspin_items.created_date,
+			{$this->wpdb->prefix}topspin_items.sku_data,
+			{$this->wpdb->prefix}topspin_items.in_stock_quantity,
 			{$this->wpdb->prefix}topspin_items_tags.tag_name,
 			{$this->wpdb->prefix}topspin_currency.currency,
 			{$this->wpdb->prefix}topspin_currency.symbol
@@ -1806,7 +1894,7 @@ EOD;
 		$item['default_image_large'] = (strlen($item['poster_image_source'])) ? $this->getItemDefaultImage($item['id'],$item['poster_image_source'],'large') : $item['poster_image'];
 		return $item;
 	}
-	
+
 	public function getItemImages($item_id) {
 		##	Retrieves the item's images
 		##
@@ -1933,7 +2021,8 @@ EOD;
 		//Set Default Status
 		foreach($data as $key=>$row) { $data[$key]['status'] = 0; }
 		return $data;
-	}	
+	}
+	/* !----- ARTISTS ----- */
 	public function artists_get_list($opts=array()) {
 		/*
 		 *	Retrieves the list of artists from the database
@@ -1973,7 +2062,9 @@ EOD;
 		 *		The orders list ordered by the order's created date from newest to oldest
 		 */
 		$aIds = $this->settings_get('topspin_artist_id');
-		$artistIds = implode(',',$aIds);
+		if(is_string($aIds)) { $artistIds = array($aIds); }
+		else { $artistIds = $aIds; }
+		$artistIds = (count($artistIds)) ? implode(',',$artistIds) : '0';
 		$sql = <<<EOD
 		SELECT
 			{$this->wpdb->prefix}topspin_orders.id,
@@ -2059,6 +2150,7 @@ EOD;
 		}
 		return $itemsList;
 	}
+	/* !----- PRODUCTS ----- */
 	public function product_get_most_popular_list($count=null) {
 		/*	Retrieves the list of the most popular ordered items
 		 *
@@ -2069,7 +2161,9 @@ EOD;
 		 *		The items list ordered by the most ordered to least
 		 */
 		$aIds = $this->settings_get('topspin_artist_id');
-		$artistIds = implode(',',$aIds);
+		if(is_string($aIds)) { $artistIds = array($aIds); }
+		else { $artistIds = $aIds; }
+		$artistIds = (count($artistIds)) ? implode(',',$artistIds) : '0';
 		$LIMIT = ($count) ? "LIMIT %d" : "";
 		$sql = <<<EOD
 		SELECT
@@ -2093,10 +2187,13 @@ EOD;
 			{$this->wpdb->prefix}topspin_items.campaign,
 			{$this->wpdb->prefix}topspin_items.offer_url,
 			{$this->wpdb->prefix}topspin_items.mobile_url,
+			{$this->wpdb->prefix}topspin_items.last_modified,
+			{$this->wpdb->prefix}topspin_items.created_date,
 			GROUP_CONCAT(DISTINCT {$this->wpdb->prefix}topspin_items_tags.tag_name SEPARATOR ',') AS `tags`,
 			{$this->wpdb->prefix}topspin_currency.currency,
 			{$this->wpdb->prefix}topspin_currency.symbol,
-		 	{$this->wpdb->prefix}topspin_items.last_modified
+		 	{$this->wpdb->prefix}topspin_items.last_modified,
+		 	{$this->wpdb->prefix}topspin_items.created_date
 		FROM
 		 	{$this->wpdb->prefix}topspin_orders_items
 		LEFT JOIN

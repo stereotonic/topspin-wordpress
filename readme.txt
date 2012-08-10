@@ -276,6 +276,9 @@ This plugin is in open development.  Over the weeks and months we hope to roll o
 * Added currency support for (YEN, EUR, AUD)
 * Moved lightbox to be loaded within AJAX
 * Added a JS callback to viewProduct called "window.wpTopspinPluginOnViewProduct"
+* Added a JS option window.wpTopspinPluginDisableHashPermalink to disable plugin auto-loading lightboxes (to allow custom theme overriding)
+* Added the item creation date on WordPress to allow tracking NEW items that gets added.
+* Added the ability to set an Description Length in the grid
 
 = 3.3.3.3 =
 * Fixed lightbox handler with auto-filled anchor tags - @ezmiller

@@ -59,7 +59,7 @@ function topspin_ajax_refresh_tags() {
 	$artist_id = esc_attr($_GET['artist_id']);
 	$ret = array('error'=>1);
 	$theStore = $store->getStore($store_id);
-	if($theStore) { $tags = $store->store_get_tags($store_id); }
+	if($theStore) { $tags = $store->stores_get_tags($store_id); }
 	else { $tags = $store->tags_get_list($artist_id); }
 	$ret = array(
 		'success' => 1,

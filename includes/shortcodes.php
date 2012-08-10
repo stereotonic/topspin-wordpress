@@ -81,7 +81,7 @@ function topspin_shortcode_buy_buttons($atts) {
 	## Get Items
 	$allitems = $store->getStoreItems($storeID,0);
 	## Get Paged Items
-	$storeitems = ($storedata['show_all_items']) ? $allitems : $store->getStoreItemsPage($allitems,$storedata['items_per_page'],$page);
+	$storeitems = ($storedata['show_all_items']) ? $allitems : $store->stores_get_items_page($allitems,$storedata['items_per_page'],$page);
 	## Set Additional Store Data
 	if($storedata['show_all_items']) {
 		$storedata['total_items'] = count($allitems);

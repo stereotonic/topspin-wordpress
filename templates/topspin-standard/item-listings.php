@@ -18,6 +18,7 @@
  *	Example: /wp-content/themes/<current-theme>/topspin-standard/item-listings.php
  *
  */
+
 ?>
 
 <?php if(count($storeitems)) : ?>
@@ -36,10 +37,22 @@
         	<?php ## BEGIN SWITCH OFFER TYPE
             switch($item['offer_type']) {
 				case 'buy_button': ?>
-					<h2 class="topspin-item-title"><a class="topspin-view-item" href="#!/<?php echo $item['id']; ?>"><?php echo $item['name'];?></a></h2>
+					<h2 class="topspin-item-title">
+						<?php if($item['created_date']>TOPSPIN_NEW_CUTOFF_DATE) : ?><span class="topspin-item-new">NEW</span><?php endif; ?>
+						<a class="topspin-view-item" href="#!/<?php echo $item['id']; ?>"><?php echo $item['name'];?></a>
+					</h2>
                     <div class="topspin-item-image"><a class="topspin-view-item" href="#!/<?php echo $item['id']; ?>"><img src="<?php echo $item['default_image'];?>" /></a></div>
-					<div class="topspin-item-price">Price: <?php echo $item['symbol'];?><?php echo $item['price'];?></div>
-					<div class="topspin-item-buy"><a class="topspin-buy" href="<?php echo $item['offer_url'];?>">Buy</a></div>
+					<div class="topspin-item-price">
+						<?php if($item['tag_name']==$storedata['sale_tag']) : ?><div class="topspin-item-onsale">ON SALE!</div><?php endif; ?>
+						Price: <?php echo $item['symbol'];?><?php echo $item['price'];?>
+					</div>
+					<div class="topspin-item-buy">
+						<?php if($item['in_stock_quantity']>0 || $item['product_type']=='digital_package') : ?>
+							<a class="topspin-buy" href="<?php echo $item['offer_url'];?>">Buy</a>
+						<?php else : ?>
+							<span class="topspin-soldout">SOLD OUT</span>
+						<?php endif; ?>
+					</div>
 					<?php break;
 				case 'email_for_media':
 				case 'bundle_widget':

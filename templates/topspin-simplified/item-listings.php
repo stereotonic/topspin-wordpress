@@ -33,7 +33,10 @@
 		for($col=1;$col<=$storedata['grid_columns'];$col++) : $key = ($row*$storedata['grid_columns'])-($storedata['grid_columns']-($col-1)); ?>
 		<td width="<?php echo floor(100/$storedata['grid_columns']);?>%">
 			<?php if(isset($storeitems[$key])) : ?>
-			<h2 class="topspin-title-name"><a class="topspin-view-item" href="#!/<?php echo $storeitems[$key]['id']; ?>"><?php echo $storeitems[$key]['name'];?></a></h2>
+			<h2 class="topspin-title-name">
+				<?php if($storeitems[$key]['created_date']>TOPSPIN_NEW_CUTOFF_DATE) : ?><span class="topspin-item-new">NEW</span><?php endif; ?>
+				<a class="topspin-view-item" href="#!/<?php echo $storeitems[$key]['id']; ?>"><?php echo $storeitems[$key]['name'];?></a>
+			</h2>
 			<?php endif; ?>
 		</td>
 		<?php endfor; ?>
@@ -60,11 +63,21 @@
 		</td>
 		<?php endfor; ?>
 	</tr>
+	<tr class="topspin-item-desc">
+		<?php for($col=1;$col<=$storedata['grid_columns'];$col++) : $key = ($row*$storedata['grid_columns'])-($storedata['grid_columns']-($col-1)); ?>
+		<td>
+			<?php if(isset($storeitems[$key])) : ?>
+				<?php echo substr($storeitems[$key]['description'],0,$storedata['desc_length']); ?>
+			<?php endif; ?>
+		</td>
+		<?php endfor; ?>
+	</tr>
 	<tr class="topspin-item-price">
 		<?php
 		for($col=1;$col<=$storedata['grid_columns'];$col++) : $key = ($row*$storedata['grid_columns'])-($storedata['grid_columns']-($col-1)); ?>
 		<td width="<?php echo floor(100/$storedata['grid_columns']);?>%">
 		<?php if(isset($storeitems[$key])) : ?>
+			<?php if($storeitems[$key]['tag_name']==$storedata['sale_tag']) : ?><div class="topspin-item-onsale">ON SALE!</div><?php endif; ?>
 			Price: <?php echo $storeitems[$key]['symbol'];?><?php echo $storeitems[$key]['price'];?>
 		<?php endif; ?>
 		</td>
@@ -75,7 +88,11 @@
 		for($col=1;$col<=$storedata['grid_columns'];$col++) : $key = ($row*$storedata['grid_columns'])-($storedata['grid_columns']-($col-1)); ?>
 		<td width="<?php echo floor(100/$storedata['grid_columns']);?>%">
 		<?php if(isset($storeitems[$key])) : ?>
-		<a class="topspin-buy" href="<?php echo $storeitems[$key]['offer_url'];?>">Buy</a></td>
+			<?php if($storeitems[$key]['in_stock_quantity']>0 || $storeitems[$key]['product_type']=='digital_package') : ?>
+				<a class="topspin-buy" href="<?php echo $storeitems[$key]['offer_url'];?>">Buy</a>
+			<?php else : ?>
+				<span class="topspin-soldout">SOLD OUT</span>
+			<?php endif; ?>
 		<?php endif; ?>
 		</td>
 		<?php endfor; ?>

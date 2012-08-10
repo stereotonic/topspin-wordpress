@@ -1,10 +1,12 @@
 <?php
 /*
- *	Last Modified:		March 21, 2012
+ *	Last Modified:		August 9, 2012
  *
  *	----------------------------------
  *	Change Log
  *	----------------------------------
+ *	2012-08-09
+ 		- Added "template.php" and "wp_head.php"
  *	2012-03-14
  		- Organized files.
  *	2011-07-26

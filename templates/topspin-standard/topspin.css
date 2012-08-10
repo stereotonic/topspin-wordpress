@@ -93,6 +93,15 @@ ul.topspin-item-listings li.topspin-item {
 	float:left;
 	overflow:hidden;
 }
+ul.topspin-item-listings li.topspin-item .topspin-item-new {
+	display:inline-block;
+	*display:inline;
+	zoom:1;
+	color:#fff;
+	background-color:#ff0000;
+	text-align:center;
+	padding:0px 5px;
+}
 ul.topspin-item-listings li.topspin-item div.topspin-item-canvas {
 	border-top:1px solid;
 	padding-top:15px;
@@ -112,7 +121,14 @@ ul.topspin-item-listings li.topspin-item div.topspin-item-canvas div.topspin-ite
 	color:#ff0000;
 	font-size:14px;
 	margin-bottom:20px;
+	text-align:center;
 }
+	ul.topspin-item-listings li.topspin-item div.topspin-item-canvas div.topspin-item-price .topspin-item-onsale {
+		color:#fff;
+		background-color:#ff0000;
+		text-align:center;
+		padding:0px 5px;
+	}
 ul.topspin-item-listings li.topspin-item div.topspin-item-canvas div.topspin-item-image {
 	width:100%;
 	margin-bottom:20px;	
@@ -135,7 +151,17 @@ ul.topspin-item-listings li.topspin-item div.topspin-item-canvas div.topspin-ite
 	padding:3px 10px;
 	display:block;
 	width:50%;
+	margin:0px auto;
 }
+	ul.topspin-item-listings li.topspin-item div.topspin-item-canvas .topspin-soldout {
+		background-color:#ddd;
+		color:#000;
+		text-decoration:none;
+		padding:3px 10px;
+		display:block;
+		width:50%;
+		margin:0px auto;
+	}
 ul.topspin-item-listings li.topspin-item div.topspin-item-canvas div.topspin-view-more-canvas {
 	display:none;
 }
@@ -269,6 +295,15 @@ div.topspin-view-more-canvas div.topspin-view-more-buy a.topspin-buy {
 	text-decoration:none;
 	padding:10px 15px;
 }
+	div.topspin-view-more-canvas div.topspin-view-more-buy .topspin-soldout {
+		float:left;
+		font-size:24px;
+		line-height:30px;
+		background-color:#ddd;
+		color:#000;
+		text-decoration:none;
+		padding:10px 15px;
+	}
 div.topspin-view-more-canvas div.topspin-view-more-buy div.topspin-view-more-price {
 	float:right;
 	height:50px;

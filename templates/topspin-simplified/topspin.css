@@ -100,6 +100,7 @@ table.topspin-simplified-item-listings tr.topspin-item-title {
 }
 table.topspin-simplified-item-listings tr.topspin-item-title td {
 	padding:15px 0px 0px 0px;
+	text-align:left;
 }
 table.topspin-simplified-item-listings tr.topspin-item-title td h2.topspin-title-name {
 	border-top:1px solid;
@@ -107,6 +108,15 @@ table.topspin-simplified-item-listings tr.topspin-item-title td h2.topspin-title
 	padding-top:10px;
 	font-size:inherit;
 	color:inherit;
+}
+table.topspin-simplified-item-listings tr.topspin-item-title .topspin-item-new {
+	display:inline-block;
+	*display:inline;
+	zoom:1;
+	color:#fff;
+	background-color:#ff0000;
+	text-align:center;
+	padding:0px 5px;
 }
 table.topspin-simplified-item-listings tr.topspin-item-image {
 	width:100%;
@@ -130,8 +140,13 @@ table.topspin-simplified-item-listings tr.topspin-item-price {
 	color:#ff0000;
 	font-size:14px;
 	margin-bottom:20px;
-
 }
+	table.topspin-simplified-item-listings tr.topspin-item-price .topspin-item-onsale {
+		color:#fff;
+		background-color:#ff0000;
+		text-align:center;
+		padding:0px 5px;
+	}
 table.topspin-simplified-item-listings tr.topspin-item-buy {
 }
 table.topspin-simplified-item-listings tr.topspin-item-buy a.topspin-buy {
@@ -143,6 +158,15 @@ table.topspin-simplified-item-listings tr.topspin-item-buy a.topspin-buy {
 	width:50%;
 	margin:0px auto;
 }
+	table.topspin-simplified-item-listings tr.topspin-item-buy .topspin-soldout {
+		background-color:#ddd;
+		color:#000;
+		text-decoration:none;
+		padding:3px 10px;
+		display:block;
+		width:50%;
+		margin:0px auto;
+	}
 table.topspin-simplified-item-listings tr.topspin-spacer {
 	height:20px;
 }
@@ -271,6 +295,15 @@ div.topspin-view-more-canvas div.topspin-view-more-buy {
 		text-decoration:none;
 		padding:10px 15px;
 	}
+		div.topspin-view-more-canvas div.topspin-view-more-buy .topspin-soldout {
+			float:left;
+			font-size:24px;
+			line-height:30px;
+			background-color:#ddd;
+			color:#000;
+			text-decoration:none;
+			padding:10px 15px;
+		}
 	div.topspin-view-more-canvas div.topspin-view-more-buy div.topspin-view-more-price {
 		float:right;
 		height:50px;
